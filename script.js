@@ -262,35 +262,43 @@ function isValidKnightMove(startRow, startCol, endRow, endCol) {
 }
 
 // Vérification du mouvement du pion
+// Vérification du mouvement du pion
 function isValidPawnMove(pieceType, startRow, startCol, endRow, endCol) {
-    const direction = (pieceType === 'P') ? -1 : 1; // Blancs avancent vers le haut (-1), Noirs vers le bas (+1)
-    const rowDiff = endRow - startRow;
-    const colDiff = Math.abs(startCol - endCol);
+    const direction = (pieceType === 'P') ? 1 : -1; // Blancs montent (1), Noirs descendent (-1)
+    const rowDiff = endRow - startRow; // Différence de rangée (sens compte)
+    const colDiff = Math.abs(startCol - endCol); // Différence absolue de colonne
 
-    // Vérifier si le pion avance d'une case vers l'avant sur une case libre
+    // Mouvements de base
+    // Avancer d'une case
     if (colDiff === 0 && rowDiff === direction && !isOccupied(endRow, endCol)) {
         return true;
     }
 
-    // Vérifier si le pion avance de deux cases depuis la rangée initiale
+    // Avancer de deux cases depuis la rangée initiale
     if (
         colDiff === 0 &&
-        rowDiff === direction * 2 &&
+        rowDiff === direction * 2 && // Déplacement doit suivre la direction
         !isOccupied(endRow, endCol) &&
-        !isOccupied(startRow + direction, startCol) &&
-        ((pieceType === 'P' && startRow === 6) || (pieceType === 'p' && startRow === 1))
+        !isOccupied(startRow + direction, startCol) && // Case intermédiaire doit être libre
+        ((pieceType === 'P' && startRow === 1) || (pieceType === 'p' && startRow === 6)) // Correct start rows
     ) {
         return true;
     }
 
-    // Vérifier si le pion capture une pièce en diagonale
+    // Capturer une pièce en diagonale
     if (colDiff === 1 && rowDiff === direction && isOccupiedByOpponent(endRow, endCol, pieceType === 'P' ? 'black' : 'white')) {
         return true;
     }
 
-    console.log('Le pion se déplace d\'une case (ou deux cases pour un premier mouvement).');
+    console.log(`Mouvement du pion (${pieceType}) : startRow=${startRow}, startCol=${startCol}, endRow=${endRow}, endCol=${endCol}`);
+    console.log(`rowDiff=${rowDiff}, colDiff=${colDiff}, direction=${direction}`);
+
+
+    // Si aucune des conditions n'est remplie
+    console.log('Mouvement invalide. Le pion se déplace d\'une case (ou deux cases pour un premier mouvement ou capture en diagonale).');
     return false;
 }
+
 
 
 // Vérification du chemin pour les déplacements en ligne droite ou en diagonale
