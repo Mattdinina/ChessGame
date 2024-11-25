@@ -31,22 +31,22 @@ const initialBoard = [
     [null, null, null, null, null, null, null, null],
     [null, null, null, null, null, null, null, null],
     [null, null, null, null, null, null, null, null],
-    ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
-    ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r']
+    ['pb', 'pb', 'pb', 'pb', 'pb', 'pb', 'pb', 'pb'],
+    ['rb', 'nb', 'bb', 'qb', 'kb', 'bb', 'nb', 'rb']
 ];
 
 const pieceNames = {
     R: "Tour blanche", N: "Cavalier blanc", B: "Fou blanc", Q: "Reine blanche",
     K: "Roi blanc", P: "Pion blanc",
-    r: "Tour noire", n: "Cavalier noir", b: "Fou noir", q: "Reine noire",
-    k: "Roi noir", p: "Pion noir"
+    rb: "Tour noire", nb: "Cavalier noir", bb: "Fou noir", qb: "Reine noire",
+    kb: "Roi noir", pb: "Pion noir"
 };
 
 const pieceImages = {
     R: "./images/rook_white.png", N: "./images/knight_white.png", B: "./images/bishop_white.png",
     Q: "./images/queen_white.png", K: "./images/king_white.png", P: "./images/pawn_white.png",
-    r: "./images/rook_black.png", n: "./images/knight_black.png", b: "./images/bishop_black.png",
-    q: "./images/queen_black.png", k: "./images/king_black.png", p: "./images/pawn_black.png"
+    rb: "./images/rook_black.png", nb: "./images/knight_black.png", bb: "./images/bishop_black.png",
+    qb: "./images/queen_black.png", kb: "./images/king_black.png", pb: "./images/pawn_black.png"
 };
 
 // Placer les pièces sur l'échiquier
@@ -116,6 +116,8 @@ document.querySelectorAll('.square').forEach(square => {
             // Vérification de la validité du mouvement pour la pièce
             let isValid = false;
             
+
+            console.log('pieceType :', pieceType)
             switch (pieceType) {
                 case 'K': // Roi
                     isValid = isValidKingMove(startRow, startCol, endRow, endCol);
@@ -137,22 +139,22 @@ document.querySelectorAll('.square').forEach(square => {
                     break;
                 
 
-                case 'k': // Roi
+                case 'kb': // Roi
                     isValid = isValidKingMove(startRow, startCol, endRow, endCol);
                     break;
-                case 'q': // Dame
+                case 'qb': // Dame
                     isValid = isValidQueenMove(startRow, startCol, endRow, endCol);
                     break;
-                case 'r': // Tour
+                case 'rb': // Tour
                     isValid = isValidRookMove(startRow, startCol, endRow, endCol);
                     break;
-                case 'b': // Fou
+                case 'bb': // Fou
                     isValid = isValidBishopMove(startRow, startCol, endRow, endCol);
                     break;
-                case 'n': // Cavalier (Vérification spécifique pour les cavaliers)
+                case 'nb': // Cavalier (Vérification spécifique pour les cavaliers)
                     isValid = isValidKnightMove(startRow, startCol, endRow, endCol);
                     break;
-                case 'p': // Pion
+                case 'pb': // Pion
                     isValid = isValidPawnMove(selectedPiece.alt[0], startRow, startCol, endRow, endCol);
                     break;
                 default:
@@ -264,7 +266,12 @@ function isValidKnightMove(startRow, startCol, endRow, endCol) {
 // Vérification du mouvement du pion
 // Vérification du mouvement du pion
 function isValidPawnMove(pieceType, startRow, startCol, endRow, endCol) {
-    const direction = (pieceType === 'P') ? 1 : -1; // Blancs montent (1), Noirs descendent (-1)
+    if (pieceType = 'P'){ direction = 1}
+    if (pieceType = 'pb'){ direction = -1}
+    else { 
+        console.log(`ce n'est pas un pion`);
+         return false };
+     // Blancs montent (1), Noirs descendent (-1)
     const rowDiff = endRow - startRow; // Différence de rangée (sens compte)
     const colDiff = Math.abs(startCol - endCol); // Différence absolue de colonne
 
@@ -280,7 +287,7 @@ function isValidPawnMove(pieceType, startRow, startCol, endRow, endCol) {
         rowDiff === direction * 2 && // Déplacement doit suivre la direction
         !isOccupied(endRow, endCol) &&
         !isOccupied(startRow + direction, startCol) && // Case intermédiaire doit être libre
-        ((pieceType === 'P' && startRow === 1) || (pieceType === 'p' && startRow === 6)) // Correct start rows
+        ((pieceType === 'P' && startRow === 1) || (pieceType === 'pb' && startRow === 6)) // Correct start rows
     ) {
         return true;
     }
