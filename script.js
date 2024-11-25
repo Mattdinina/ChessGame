@@ -25,28 +25,28 @@ for (let row = 0; row < 8; row++) {
 
 // Configuration initiale des pièces
 const initialBoard = [
-    ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'],
+    ['R', 'N', 'B', 'K', 'Q', 'B', 'N', 'R'],
     ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
     [null, null, null, null, null, null, null, null],
     [null, null, null, null, null, null, null, null],
     [null, null, null, null, null, null, null, null],
     [null, null, null, null, null, null, null, null],
-    ['pb', 'pb', 'pb', 'pb', 'pb', 'pb', 'pb', 'pb'],
-    ['rb', 'nb', 'bb', 'qb', 'kb', 'bb', 'nb', 'rb']
+    ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
+    ['rb', 'nb', 'bb', 'kb', 'qb', 'bb', 'nb', 'rb']
 ];
 
 const pieceNames = {
     R: "Tour blanche", N: "Cavalier blanc", B: "Fou blanc", Q: "Reine blanche",
     K: "Roi blanc", P: "Pion blanc",
     rb: "Tour noire", nb: "Cavalier noir", bb: "Fou noir", qb: "Reine noire",
-    kb: "Roi noir", pb: "Pion noir"
+    kb: "Roi noir", p: "Pion noir"
 };
 
 const pieceImages = {
     R: "./images/rook_white.png", N: "./images/knight_white.png", B: "./images/bishop_white.png",
     Q: "./images/queen_white.png", K: "./images/king_white.png", P: "./images/pawn_white.png",
     rb: "./images/rook_black.png", nb: "./images/knight_black.png", bb: "./images/bishop_black.png",
-    qb: "./images/queen_black.png", kb: "./images/king_black.png", pb: "./images/pawn_black.png"
+    qb: "./images/queen_black.png", kb: "./images/king_black.png", p: "./images/pawn_black.png"
 };
 
 // Placer les pièces sur l'échiquier
@@ -111,7 +111,8 @@ document.querySelectorAll('.square').forEach(square => {
             const endRow = parseInt(square.id.split('-')[1]);
             const endCol = parseInt(square.id.split('-')[2]);
             const selectedPiece = selectedSquare.querySelector('img');
-            const pieceType = selectedPiece.alt[0];  // Première lettre du nom de la pièce (ex: 'R' pour Tour, 'P' pour Pion)
+            console.log('piece sélectionnée : ', selectedPiece)
+            const pieceType = selectedPiece.alt;  // Première lettre du nom de la pièce (ex: 'R' pour Tour, 'P' pour Pion)
 
             // Vérification de la validité du mouvement pour la pièce
             let isValid = false;
@@ -119,43 +120,43 @@ document.querySelectorAll('.square').forEach(square => {
 
             console.log('pieceType :', pieceType)
             switch (pieceType) {
-                case 'K': // Roi
+                case 'Roi blanc': // Roi
                     isValid = isValidKingMove(startRow, startCol, endRow, endCol);
                     break;
-                case 'Q': // Dame
+                case 'Reine blanche': // Dame
                     isValid = isValidQueenMove(startRow, startCol, endRow, endCol);
                     break;
-                case 'R': // Tour
+                case 'Tour blanche': // Tour
                     isValid = isValidRookMove(startRow, startCol, endRow, endCol);
                     break;
-                case 'B': // Fou
+                case 'Fou blanc': // Fou
                     isValid = isValidBishopMove(startRow, startCol, endRow, endCol);
                     break;
-                case 'N': // Cavalier (Vérification spécifique pour les cavaliers)
+                case 'Cavalier blanc': // Cavalier (Vérification spécifique pour les cavaliers)
                     isValid = isValidKnightMove(startRow, startCol, endRow, endCol);
                     break;
-                case 'P': // Pion
-                    isValid = isValidPawnMove(selectedPiece.alt[0], startRow, startCol, endRow, endCol);
+                case 'Pion blanc': // Pion
+                    isValid = isValidPawnMove(1, startRow, startCol, endRow, endCol);
                     break;
                 
 
-                case 'kb': // Roi
+                case 'Roi noir': // Roi
                     isValid = isValidKingMove(startRow, startCol, endRow, endCol);
                     break;
-                case 'qb': // Dame
+                case 'Reine noire': // Dame
                     isValid = isValidQueenMove(startRow, startCol, endRow, endCol);
                     break;
-                case 'rb': // Tour
+                case 'Tour noire': // Tour
                     isValid = isValidRookMove(startRow, startCol, endRow, endCol);
                     break;
-                case 'bb': // Fou
+                case 'Fou noir': // Fou
                     isValid = isValidBishopMove(startRow, startCol, endRow, endCol);
                     break;
-                case 'nb': // Cavalier (Vérification spécifique pour les cavaliers)
+                case 'Cavalier noir': // Cavalier (Vérification spécifique pour les cavaliers)
                     isValid = isValidKnightMove(startRow, startCol, endRow, endCol);
                     break;
-                case 'pb': // Pion
-                    isValid = isValidPawnMove(selectedPiece.alt[0], startRow, startCol, endRow, endCol);
+                case 'Pion noir': // Pion
+                    isValid = isValidPawnMove(-1, startRow, startCol, endRow, endCol);
                     break;
                 default:
                     console.log('Type de pièce non reconnu.');
@@ -180,6 +181,7 @@ document.querySelectorAll('.square').forEach(square => {
             } else {
                 console.log('Mouvement invalide.');
             }
+            pieceType = null;
         }
     });
 });
@@ -265,13 +267,7 @@ function isValidKnightMove(startRow, startCol, endRow, endCol) {
 
 // Vérification du mouvement du pion
 // Vérification du mouvement du pion
-function isValidPawnMove(pieceType, startRow, startCol, endRow, endCol) {
-    if (pieceType = 'P'){ direction = 1}
-    if (pieceType = 'pb'){ direction = -1}
-    else { 
-        console.log(`ce n'est pas un pion`);
-         return false };
-     // Blancs montent (1), Noirs descendent (-1)
+function isValidPawnMove(direction, startRow, startCol, endRow, endCol) {
     const rowDiff = endRow - startRow; // Différence de rangée (sens compte)
     const colDiff = Math.abs(startCol - endCol); // Différence absolue de colonne
 
@@ -287,24 +283,22 @@ function isValidPawnMove(pieceType, startRow, startCol, endRow, endCol) {
         rowDiff === direction * 2 && // Déplacement doit suivre la direction
         !isOccupied(endRow, endCol) &&
         !isOccupied(startRow + direction, startCol) && // Case intermédiaire doit être libre
-        ((pieceType === 'P' && startRow === 1) || (pieceType === 'pb' && startRow === 6)) // Correct start rows
+        ((direction === 1 && startRow === 1) || (direction === -1 && startRow === 6)) // Correct start rows
     ) {
         return true;
     }
 
     // Capturer une pièce en diagonale
-    if (colDiff === 1 && rowDiff === direction && isOccupiedByOpponent(endRow, endCol, pieceType === 'P' ? 'black' : 'white')) {
+    if (colDiff === 1 && rowDiff === direction && isOccupiedByOpponent(endRow, endCol, direction === 1 ? 'black' : 'white')) {
         return true;
     }
 
-    console.log(`Mouvement du pion (${pieceType}) : startRow=${startRow}, startCol=${startCol}, endRow=${endRow}, endCol=${endCol}`);
+    console.log(`Mouvement du pion : startRow=${startRow}, startCol=${startCol}, endRow=${endRow}, endCol=${endCol}`);
     console.log(`rowDiff=${rowDiff}, colDiff=${colDiff}, direction=${direction}`);
-
-
-    // Si aucune des conditions n'est remplie
     console.log('Mouvement invalide. Le pion se déplace d\'une case (ou deux cases pour un premier mouvement ou capture en diagonale).');
     return false;
 }
+
 
 
 
