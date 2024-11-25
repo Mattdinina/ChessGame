@@ -112,7 +112,7 @@ document.querySelectorAll('.square').forEach(square => {
             const endCol = parseInt(square.id.split('-')[2]);
             const selectedPiece = selectedSquare.querySelector('img');
             console.log('piece sélectionnée : ', selectedPiece)
-            const pieceType = selectedPiece.alt;  // Première lettre du nom de la pièce (ex: 'R' pour Tour, 'P' pour Pion)
+            const pieceType = selectedPiece.alt;  // nom de la pièce
 
             // Vérification de la validité du mouvement pour la pièce
             let isValid = false;
@@ -166,10 +166,14 @@ document.querySelectorAll('.square').forEach(square => {
             if (isValid) {
                 // Déplacer la pièce sur l'échiquier si le mouvement est valide
                 const piece = selectedSquare.querySelector('img');
-                square.appendChild(piece);  // Ajouter la pièce à la nouvelle case
-                
-                // Retirer la pièce de l'ancienne case
-                selectedSquare.innerHTML = '';
+
+                if (piece) {
+                    square.appendChild(piece);  // Ajouter la pièce à la nouvelle case
+                    selectedSquare.innerHTML = '';  // Retirer la pièce de l'ancienne case
+                } else {
+                    console.log('Erreur: Aucune pièce sélectionnée pour le déplacement.');
+                    return;
+                }
 
                 // Réinitialiser la sélection
                 selectedSquare.classList.remove('selected');
@@ -181,7 +185,7 @@ document.querySelectorAll('.square').forEach(square => {
             } else {
                 console.log('Mouvement invalide.');
             }
-            pieceType = null;
+            // pieceType = null;
         }
     });
 });
@@ -204,53 +208,127 @@ function isOccupiedByOpponent(row, col, opponentColor) {
 
 // Vérification du mouvement du roi
 function isValidKingMove(startRow, startCol, endRow, endCol) {
-    // Le roi se déplace d'une seule case dans toutes les directions
     const rowDiff = Math.abs(startRow - endRow);
     const colDiff = Math.abs(startCol - endCol);
-    
+
+    // Le roi se déplace d'une seule case dans toutes les directions (vertical, horizontal ou diagonal)
     if (rowDiff > 1 || colDiff > 1) {
         console.log('Le roi se déplace d\'une seule case dans toutes les directions.');
         return false;
     }
-    
+
+    // Vérifier si la case de destination est occupée par une pièce de la même couleur
+    const destinationSquare = document.getElementById(`square-${endRow}-${endCol}`);
+    const piece = destinationSquare.querySelector('img');
+    if (piece && piece.src.includes(currentPlayer === 'white' ? 'white' : 'black')) {
+        console.log('La case de destination est occupée par une pièce de la même couleur.');
+        return false;
+    }
+
+    console.log('Mouvement valide pour le roi.');
     return true;
 }
+
 
 // Vérification du mouvement de la dame
 function isValidQueenMove(startRow, startCol, endRow, endCol) {
     const rowDiff = Math.abs(startRow - endRow);
     const colDiff = Math.abs(startCol - endCol);
-    
-    // La dame peut se déplacer en ligne droite ou en diagonale
+
+    // La reine se déplace en ligne droite (horizontale/verticale) ou en diagonale
     if (rowDiff === colDiff || startRow === endRow || startCol === endCol) {
-        return isClearPath(startRow, startCol, endRow, endCol);
+        // Vérification du chemin dégagé
+        const pathIsClear = isClearPath(startRow, startCol, endRow, endCol);
+
+        // Vérification si la case de destination est valide
+        const destinationSquare = document.getElementById(`square-${endRow}-${endCol}`);
+        const pieceAtDestination = destinationSquare.querySelector('img');
+
+        if (pathIsClear) {
+            if (pieceAtDestination) {
+                // Si la case de destination est occupée par une pièce ennemie
+                const isOpponentPiece = pieceAtDestination.src.includes(currentPlayer === 'white' ? 'black' : 'white');
+                if (isOpponentPiece) {
+                    return true; // Le mouvement est valide car c'est une prise
+                } else {
+                    console.log("La case de destination est occupée par une pièce de la même couleur.");
+                    return false;
+                }
+            }
+            return true; // La case de destination est libre, le mouvement est valide
+        }
     }
-    
-    console.log('La dame se déplace en ligne droite ou en diagonale.');
+
+    console.log('La reine se déplace en ligne droite ou en diagonale.');
     return false;
 }
 
+
 // Vérification du mouvement de la tour
 function isValidRookMove(startRow, startCol, endRow, endCol) {
+    // La tour doit se déplacer en ligne droite, soit horizontalement soit verticalement
     if (startRow !== endRow && startCol !== endCol) {
         console.log('La tour se déplace en ligne droite.');
         return false;
     }
-    return isClearPath(startRow, startCol, endRow, endCol);
+
+    // Vérifier que le chemin est dégagé (s'il y a des cases entre la position de départ et d'arrivée)
+    if (!isClearPath(startRow, startCol, endRow, endCol)) {
+        console.log('Le chemin de la tour est obstrué.');
+        return false;
+    }
+
+    // Vérifier si la case de destination est occupée par une pièce de la même couleur
+    const square = document.getElementById(`square-${endRow}-${endCol}`);
+    const piece = square.querySelector('img');
+    
+    if (piece) {
+        const pieceColor = piece.src.includes('white') ? 'white' : 'black';
+        if (pieceColor === currentPlayer) {
+            console.log('La case de destination est occupée par une pièce de la même couleur.');
+            return false;  // On ne peut pas se déplacer sur une case occupée par une pièce de la même couleur
+        }
+    }
+
+    return true;  // Le mouvement est valide si le chemin est dégagé et la case n'est pas occupée par une pièce alliée
 }
+
 
 // Vérification du mouvement du fou
 function isValidBishopMove(startRow, startCol, endRow, endCol) {
     const rowDiff = Math.abs(startRow - endRow);
     const colDiff = Math.abs(startCol - endCol);
     
+    // Vérifie si le déplacement est strictement en diagonale
     if (rowDiff !== colDiff) {
-        console.log('Le fou se déplace en diagonale.');
+        console.log(`Le fou doit se déplacer en diagonale. Déplacement invalide: rowDiff=${rowDiff}, colDiff=${colDiff}`);
         return false;
     }
-    
-    return isClearPath(startRow, startCol, endRow, endCol);
+
+    // Vérifie si le chemin est dégagé
+    const pathClear = isClearPath(startRow, startCol, endRow, endCol);
+    if (!pathClear) {
+        console.log('Le chemin du fou n\'est pas dégagé.');
+        return false;
+    }
+
+    // Vérifie si la case d'arrivée est occupée par une pièce de la même couleur
+    const destinationSquare = document.getElementById(`square-${endRow}-${endCol}`);
+    const pieceAtDestination = destinationSquare.querySelector('img');
+    if (pieceAtDestination) {
+        const pieceColor = pieceAtDestination.src.includes('white') ? 'white' : 'black';
+        if (currentPlayer === pieceColor) {
+            console.log('La destination est occupée par une pièce de la même couleur.');
+            return false;
+        }
+    }
+
+    // Si toutes les conditions sont remplies, le mouvement est valide
+    console.log('Mouvement valide pour le fou.');
+    return true;
 }
+
+
 
 // Vérification du mouvement du cavalier
 function isValidKnightMove(startRow, startCol, endRow, endCol) {
@@ -325,3 +403,4 @@ function isClearPath(startRow, startCol, endRow, endCol) {
     
     return true;
 }
+
