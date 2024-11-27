@@ -413,7 +413,7 @@ function isClearPath(startRow, startCol, endRow, endCol) {
 // Fonction pour vérifier si le roi est en échec
 function isCheck() {
     // Trouver la position du roi du joueur actuel
-    const king = document.querySelector(`img[src*="${currentPlayer === 'white' ? 'Roi blanc' : 'Roi noir'}"]`);
+    const king = document.querySelector(`img[src*="${currentPlayer === 'white' ? './images/king_white.png' : './images/king_black.png'}"]`);
 
     // Vérifie si l'élément roi a été trouvé
     if (!king) {
@@ -424,9 +424,15 @@ function isCheck() {
     const kingPosition = king.parentNode.id.split('-').slice(1).map(Number); // [row, col]
     const kingRow = kingPosition[0];
     const kingCol = kingPosition[1];
+    console.log('kingPosition : ', kingPosition)
 
+
+    
+    const opponentPieces = Array.from(document.querySelectorAll('img'))
+    .filter(img => img.alt.includes(currentPlayer === 'white' ? 'noir' : 'blanc'));
+    
+    
     // Vérifier si une pièce adverse peut attaquer le roi
-    const opponentPieces = document.querySelectorAll(`img[src*="${currentPlayer === 'white' ? 'black' : 'white'}"]`);
     
     for (const piece of opponentPieces) {
         const pieceSquare = piece.parentNode;
@@ -435,6 +441,8 @@ function isCheck() {
 
         // Vérification si une pièce ennemie peut attaquer le roi
         if (canAttackKing(piece, pieceRow, pieceCol, kingRow, kingCol)) {
+            console.log(`Analyse : ${piece.alt} en [${pieceRow}, ${pieceCol}] peut-elle attaquer le roi en [${kingRow}, ${kingCol}] ?`);
+            console.log('le roi est en échec')
             return true; // Le roi est en échec
         }
     }
@@ -444,8 +452,7 @@ function isCheck() {
 
 
 function canAttackKing(piece, startRow, startCol, kingRow, kingCol) {
-    const pieceType = piece.src.split('-').pop().split('.')[0]; // Exemple: "king", "queen", "rook", etc.
-    
+    const pieceType = piece.src.split('/').pop().split('_')[0]; // Exemple: "king", "queen", "rook", etc.
     switch (pieceType) {
         case 'queen':
             return isValidQueenMove(startRow, startCol, kingRow, kingCol);
