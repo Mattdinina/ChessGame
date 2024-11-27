@@ -185,7 +185,12 @@ document.querySelectorAll('.square').forEach(square => {
             } else {
                 console.log('Mouvement invalide.');
             }
-            // pieceType = null;
+            if (isCheck()) {
+                console.log(`Le roi ${currentPlayer} est en échec !`);
+                // Annuler le mouvement et revenir à l'état précédent
+                // Tu peux aussi ajouter une logique pour notifier le joueur ou bloquer le mouvement
+            }
+            
         }
     });
 });
@@ -392,7 +397,7 @@ function isClearPath(startRow, startCol, endRow, endCol) {
     let row = startRow + rowStep;
     let col = startCol + colStep;
     
-    while (row !== endRow && col !== endCol) {
+    while (row !== endRow || col !== endCol) {
         if (isOccupied(row, col)) {
             console.log('Il y a une pièce sur le chemin.');
             return false;
@@ -404,3 +409,55 @@ function isClearPath(startRow, startCol, endRow, endCol) {
     return true;
 }
 
+
+// Fonction pour vérifier si le roi est en échec
+function isCheck() {
+    // Trouver la position du roi du joueur actuel
+    const king = document.querySelector(`img[src*="${currentPlayer === 'white' ? 'Roi blanc' : 'Roi noir'}"]`);
+
+    // Vérifie si l'élément roi a été trouvé
+    if (!king) {
+        console.error("Le roi du joueur actuel n'a pas été trouvé dans le DOM.");
+        return false; // Si le roi n'est pas trouvé, on retourne false
+    }
+
+    const kingPosition = king.parentNode.id.split('-').slice(1).map(Number); // [row, col]
+    const kingRow = kingPosition[0];
+    const kingCol = kingPosition[1];
+
+    // Vérifier si une pièce adverse peut attaquer le roi
+    const opponentPieces = document.querySelectorAll(`img[src*="${currentPlayer === 'white' ? 'black' : 'white'}"]`);
+    
+    for (const piece of opponentPieces) {
+        const pieceSquare = piece.parentNode;
+        const pieceRow = parseInt(pieceSquare.id.split('-')[1]);
+        const pieceCol = parseInt(pieceSquare.id.split('-')[2]);
+
+        // Vérification si une pièce ennemie peut attaquer le roi
+        if (canAttackKing(piece, pieceRow, pieceCol, kingRow, kingCol)) {
+            return true; // Le roi est en échec
+        }
+    }
+
+    return false; // Le roi n'est pas en échec
+}
+
+
+function canAttackKing(piece, startRow, startCol, kingRow, kingCol) {
+    const pieceType = piece.src.split('-').pop().split('.')[0]; // Exemple: "king", "queen", "rook", etc.
+    
+    switch (pieceType) {
+        case 'queen':
+            return isValidQueenMove(startRow, startCol, kingRow, kingCol);
+        case 'rook':
+            return isValidRookMove(startRow, startCol, kingRow, kingCol);
+        case 'bishop':
+            return isValidBishopMove(startRow, startCol, kingRow, kingCol);
+        case 'knight':
+            return isValidKnightMove(startRow, startCol, kingRow, kingCol);
+        case 'pawn':
+            return isValidPawnMove(piece.src.includes('white') ? 1 : -1, startRow, startCol, kingRow, kingCol);
+        default:
+            return false;
+    }
+}
