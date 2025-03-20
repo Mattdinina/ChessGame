@@ -73,28 +73,9 @@ document.querySelectorAll('.square').forEach(square => {
     square.addEventListener('click', () => {
         const piece = square.querySelector('img');
         
-        if (selectedSquare) {
-            // Si une pièce est déjà sélectionnée
-            if (selectedSquare === square) {
-                // Si la même case est cliquée, désélectionner
-                selectedSquare.classList.remove('selected');
-                selectedSquare = null;
-                return;
-            }
-
-            // Si la nouvelle case contient une pièce de la même couleur, la sélectionner
-            if (piece && 
-                ((currentPlayer === 'white' && piece.src.includes('white')) || 
-                (currentPlayer === 'black' && piece.src.includes('black')))) {
-                selectedSquare.classList.remove('selected');
-                selectedSquare = square;
-                selectedSquare.classList.add('selected');
-                return;
-            }
-        }
-        
+        // Si aucune pièce n'est sélectionnée
         if (!selectedSquare) {
-            // Si aucune pièce n'est sélectionnée
+            // Vérifier si la pièce appartient au joueur actuel
             if (piece && 
                 ((currentPlayer === 'white' && piece.src.includes('white')) || 
                 (currentPlayer === 'black' && piece.src.includes('black')))) {
@@ -103,106 +84,148 @@ document.querySelectorAll('.square').forEach(square => {
             } else {
                 console.log('Sélection invalide: Vous devez cliquer sur une pièce de votre couleur.');
             }
+            return;
         }
-        
-        if (selectedSquare) {
-            const startRow = parseInt(selectedSquare.id.split('-')[1]);
-            const startCol = parseInt(selectedSquare.id.split('-')[2]);
-            const endRow = parseInt(square.id.split('-')[1]);
-            const endCol = parseInt(square.id.split('-')[2]);
-            const selectedPiece = selectedSquare.querySelector('img');
-            console.log('piece sélectionnée : ', selectedPiece)
-            const pieceType = selectedPiece.alt;  // nom de la pièce
 
-            // Vérification de la validité du mouvement pour la pièce
-            let isValid = false;
+        // Si une pièce est déjà sélectionnée
+        if (selectedSquare === square) {
+            // Si la même case est cliquée, désélectionner
+            selectedSquare.classList.remove('selected');
+            selectedSquare = null;
+            return;
+        }
+
+        // Si la nouvelle case contient une pièce de la même couleur, la sélectionner
+        if (piece && 
+            ((currentPlayer === 'white' && piece.src.includes('white')) || 
+            (currentPlayer === 'black' && piece.src.includes('black')))) {
+            selectedSquare.classList.remove('selected');
+            selectedSquare = square;
+            selectedSquare.classList.add('selected');
+            return;
+        }
+
+        // Tenter le déplacement
+        const startRow = parseInt(selectedSquare.id.split('-')[1]);
+        const startCol = parseInt(selectedSquare.id.split('-')[2]);
+        const endRow = parseInt(square.id.split('-')[1]);
+        const endCol = parseInt(square.id.split('-')[2]);
+        const selectedPiece = selectedSquare.querySelector('img');
+        const pieceType = selectedPiece.alt;
+
+        // Si le roi est en échec, vérifier d'abord si nous sommes en échec
+        if (isCheck()) {
+            // Simuler le mouvement pour voir s'il sort de l'échec
+            const originalDestPiece = square.querySelector('img');
             
-
-            console.log('pieceType :', pieceType)
-            switch (pieceType) {
-                case 'Roi blanc': // Roi
-                    isValid = isValidKingMove(startRow, startCol, endRow, endCol);
-                    break;
-                case 'Reine blanche': // Dame
-                    isValid = isValidQueenMove(startRow, startCol, endRow, endCol);
-                    break;
-                case 'Tour blanche': // Tour
-                    isValid = isValidRookMove(startRow, startCol, endRow, endCol);
-                    break;
-                case 'Fou blanc': // Fou
-                    isValid = isValidBishopMove(startRow, startCol, endRow, endCol);
-                    break;
-                case 'Cavalier blanc': // Cavalier (Vérification spécifique pour les cavaliers)
-                    isValid = isValidKnightMove(startRow, startCol, endRow, endCol);
-                    break;
-                case 'Pion blanc': // Pion
-                    isValid = isValidPawnMove(1, startRow, startCol, endRow, endCol);
-                    break;
-                
-
-                case 'Roi noir': // Roi
-                    isValid = isValidKingMove(startRow, startCol, endRow, endCol);
-                    break;
-                case 'Reine noire': // Dame
-                    isValid = isValidQueenMove(startRow, startCol, endRow, endCol);
-                    break;
-                case 'Tour noire': // Tour
-                    isValid = isValidRookMove(startRow, startCol, endRow, endCol);
-                    break;
-                case 'Fou noir': // Fou
-                    isValid = isValidBishopMove(startRow, startCol, endRow, endCol);
-                    break;
-                case 'Cavalier noir': // Cavalier (Vérification spécifique pour les cavaliers)
-                    isValid = isValidKnightMove(startRow, startCol, endRow, endCol);
-                    break;
-                case 'Pion noir': // Pion
-                    isValid = isValidPawnMove(-1, startRow, startCol, endRow, endCol);
-                    break;
-                default:
-                    console.log('Type de pièce non reconnu.');
-                    break;
+            // Sauvegarder l'état actuel
+            selectedSquare.removeChild(selectedPiece);
+            if (originalDestPiece) {
+                square.removeChild(originalDestPiece);
             }
+            square.appendChild(selectedPiece); 
 
-            if (isValid) {
-                // Déplacer la pièce sur l'échiquier si le mouvement est valide
-                const piece = selectedSquare.querySelector('img');
-
-                if (piece) {
-                    // Vérifier si la case de destination contient une pièce à capturer
-                    const destinationSquare = document.getElementById(`square-${endRow}-${endCol}`);
-                    const capturedPiece = destinationSquare.querySelector('img');
-                    
-                    if (capturedPiece) {
-                        // Si une pièce est capturée, la retirer
-                        destinationSquare.removeChild(capturedPiece);
-                        console.log(`Pièce capturée : ${capturedPiece.alt}`);
-                    }
-                    
-                    // Déplacer la pièce sélectionnée
-                    destinationSquare.appendChild(piece);
-                    selectedSquare.innerHTML = '';
-                } else {
-                    console.log('Erreur: Aucune pièce sélectionnée pour le déplacement.');
-                    return;
+            // Si le roi est toujours en échec après le mouvement
+            if (isCheck()) {
+                // Annuler le mouvement simulé
+                square.removeChild(selectedPiece);
+                selectedSquare.appendChild(selectedPiece);
+                if (originalDestPiece) {
+                    square.appendChild(originalDestPiece);
                 }
-
-                // Réinitialiser la sélection
+                console.log("Ce mouvement ne sort pas de l'échec !");
                 selectedSquare.classList.remove('selected');
                 selectedSquare = null;
-
-                // Changer de joueur
-                currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
-                console.log(`C'est au tour des ${currentPlayer} === 'white' ? 'blancs' : 'noirs'}.`);
-            } else {
-                console.log('Mouvement invalide.');
+                return;
             }
+
+            // Remettre les pièces en place pour la vérification normale du mouvement
+            square.removeChild(selectedPiece);
+            selectedSquare.appendChild(selectedPiece);
+            if (originalDestPiece) {
+                square.appendChild(originalDestPiece);
+            }
+        }
+
+        // Vérifier si le mouvement est valide pour la pièce
+        let isValid = false;
+        switch (pieceType) {
+            case 'Roi blanc':
+            case 'Roi noir':
+                isValid = isValidKingMove(startRow, startCol, endRow, endCol);
+                break;
+            case 'Reine blanche':
+            case 'Reine noire':
+                isValid = isValidQueenMove(startRow, startCol, endRow, endCol);
+                break;
+            case 'Tour blanche':
+            case 'Tour noire':
+                isValid = isValidRookMove(startRow, startCol, endRow, endCol);
+                break;
+            case 'Fou blanc':
+            case 'Fou noir':
+                isValid = isValidBishopMove(startRow, startCol, endRow, endCol);
+                break;
+            case 'Cavalier blanc':
+            case 'Cavalier noir':
+                isValid = isValidKnightMove(startRow, startCol, endRow, endCol);
+                break;
+            case 'Pion blanc':
+                isValid = isValidPawnMove(1, startRow, startCol, endRow, endCol);
+                break;
+            case 'Pion noir':
+                isValid = isValidPawnMove(-1, startRow, startCol, endRow, endCol);
+                break;
+        }
+
+        if (isValid) {
+            // Simuler le mouvement pour vérifier s'il met ou laisse le roi en échec
+            const originalDestPiece = square.querySelector('img');
+            
+            // Sauvegarder l'état actuel
+            selectedSquare.removeChild(selectedPiece);
+            if (originalDestPiece) {
+                square.removeChild(originalDestPiece);
+            }
+            square.appendChild(selectedPiece);
+
+            // Vérifier si le roi est en échec après le mouvement
+            if (isCheck()) {
+                // Annuler le mouvement simulé
+                square.removeChild(selectedPiece);
+                selectedSquare.appendChild(selectedPiece);
+                if (originalDestPiece) {
+                    square.appendChild(originalDestPiece);
+                }
+                console.log("Ce mouvement n'est pas permis car il met ou laisse votre roi en échec!");
+                selectedSquare.classList.remove('selected');
+                selectedSquare = null;
+                return;
+            }
+
+            // Si le mouvement ne met pas le roi en échec, le valider
+            if (originalDestPiece) {
+                console.log(`Pièce capturée : ${originalDestPiece.alt}`);
+            }
+
+            // Changer de joueur
+            currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
+            console.log(`C'est au tour des ${currentPlayer === 'white' ? 'blancs' : 'noirs'}.`);
+
+            // Vérifier si le nouveau joueur est en échec
             if (isCheck()) {
                 console.log(`Le roi ${currentPlayer} est en échec !`);
-                // Annuler le mouvement et revenir à l'état précédent
-                // Tu peux aussi ajouter une logique pour notifier le joueur ou bloquer le mouvement
             }
-            
+        } else {
+            console.log('Mouvement invalide.');
+            // Remettre la pièce à sa position d'origine si nécessaire
+            square.removeChild(selectedPiece);
+            selectedSquare.appendChild(selectedPiece);
         }
+
+        // Réinitialiser la sélection
+        selectedSquare.classList.remove('selected');
+        selectedSquare = null;
     });
 });
 
@@ -423,42 +446,63 @@ function isClearPath(startRow, startCol, endRow, endCol) {
 
 // Fonction pour vérifier si le roi est en échec
 function isCheck() {
+    // Sauvegarder le joueur actuel car nous devons vérifier les attaques des pièces adverses
+    const playerToCheck = currentPlayer;
+    
     // Trouver la position du roi du joueur actuel
-    const king = document.querySelector(`img[src*="${currentPlayer === 'white' ? './images/king_white.png' : './images/king_black.png'}"]`);
-
-    // Vérifie si l'élément roi a été trouvé
+    const king = document.querySelector(`img[src*="${playerToCheck === 'white' ? 'king_white.png' : 'king_black.png'}"]`);
+    
     if (!king) {
-        console.error("Le roi du joueur actuel n'a pas été trouvé dans le DOM.");
-        return false; // Si le roi n'est pas trouvé, on retourne false
+        console.error("Le roi n'a pas été trouvé.");
+        return false;
     }
-
-    const kingPosition = king.parentNode.id.split('-').slice(1).map(Number); // [row, col]
+    
+    const kingPosition = king.parentNode.id.split('-').slice(1).map(Number);
     const kingRow = kingPosition[0];
     const kingCol = kingPosition[1];
-    console.log('kingPosition : ', kingPosition)
-
-
     
+    // Temporairement changer le joueur actuel pour vérifier les mouvements des pièces adverses
+    currentPlayer = playerToCheck === 'white' ? 'black' : 'white';
+    
+    // Trouver toutes les pièces adverses
     const opponentPieces = Array.from(document.querySelectorAll('img'))
-    .filter(img => img.alt.includes(currentPlayer === 'white' ? 'noir' : 'blanc'));
+        .filter(img => img.src.includes(currentPlayer === 'white' ? 'white' : 'black'));
     
+    let isInCheck = false;
     
-    // Vérifier si une pièce adverse peut attaquer le roi
-    
+    // Vérifier si une pièce adverse peut atteindre le roi
     for (const piece of opponentPieces) {
         const pieceSquare = piece.parentNode;
         const pieceRow = parseInt(pieceSquare.id.split('-')[1]);
         const pieceCol = parseInt(pieceSquare.id.split('-')[2]);
-
-        // Vérification si une pièce ennemie peut attaquer le roi
-        if (canAttackKing(piece, pieceRow, pieceCol, kingRow, kingCol)) {
-            console.log(`Analyse : ${piece.alt} en [${pieceRow}, ${pieceCol}] peut-elle attaquer le roi en [${kingRow}, ${kingCol}] ?`);
-            console.log('le roi est en échec')
-            return true; // Le roi est en échec
+        
+        let isValidMove = false;
+        
+        // Vérifier le type de pièce et si elle peut atteindre le roi
+        if (piece.src.includes('queen')) {
+            isValidMove = isValidQueenMove(pieceRow, pieceCol, kingRow, kingCol);
+        } else if (piece.src.includes('rook')) {
+            isValidMove = isValidRookMove(pieceRow, pieceCol, kingRow, kingCol);
+        } else if (piece.src.includes('bishop')) {
+            isValidMove = isValidBishopMove(pieceRow, pieceCol, kingRow, kingCol);
+        } else if (piece.src.includes('knight')) {
+            isValidMove = isValidKnightMove(pieceRow, pieceCol, kingRow, kingCol);
+        } else if (piece.src.includes('pawn')) {
+            // Pour les pions, la direction dépend de leur couleur
+            const direction = piece.src.includes('white') ? 1 : -1;
+            isValidMove = isValidPawnMove(direction, pieceRow, pieceCol, kingRow, kingCol);
+        }
+        
+        if (isValidMove) {
+            isInCheck = true;
+            break;
         }
     }
-
-    return false; // Le roi n'est pas en échec
+    
+    // Restaurer le joueur actuel
+    currentPlayer = playerToCheck;
+    
+    return isInCheck;
 }
 
 
@@ -478,4 +522,12 @@ function canAttackKing(piece, startRow, startCol, kingRow, kingCol) {
         default:
             return false;
     }
+}
+
+function roque() {
+    const king = document.querySelector(`img[src*="${currentPlayer === 'white' ? './images/king_white.png' : './images/king_black.png'}"]`);
+    const kingPosition = king.parentNode.id.split('-').slice(1).map(Number); // [row, col]
+    const kingRow = kingPosition[0];
+    const kingCol = kingPosition[1];
+    
 }
