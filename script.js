@@ -181,7 +181,7 @@ document.querySelectorAll('.square').forEach(square => {
 
                 // Changer de joueur
                 currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
-                console.log(`C'est au tour des ${currentPlayer === 'white' ? 'blancs' : 'noirs'}.`);
+                console.log(`C'est au tour des ${currentPlayer} === 'white' ? 'blancs' : 'noirs'}.`);
             } else {
                 console.log('Mouvement invalide.');
             }
