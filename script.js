@@ -168,8 +168,19 @@ document.querySelectorAll('.square').forEach(square => {
                 const piece = selectedSquare.querySelector('img');
 
                 if (piece) {
-                    square.appendChild(piece);  // Ajouter la pièce à la nouvelle case
-                    selectedSquare.innerHTML = '';  // Retirer la pièce de l'ancienne case
+                    // Vérifier si la case de destination contient une pièce à capturer
+                    const destinationSquare = document.getElementById(`square-${endRow}-${endCol}`);
+                    const capturedPiece = destinationSquare.querySelector('img');
+                    
+                    if (capturedPiece) {
+                        // Si une pièce est capturée, la retirer
+                        destinationSquare.removeChild(capturedPiece);
+                        console.log(`Pièce capturée : ${capturedPiece.alt}`);
+                    }
+                    
+                    // Déplacer la pièce sélectionnée
+                    destinationSquare.appendChild(piece);
+                    selectedSquare.innerHTML = '';
                 } else {
                     console.log('Erreur: Aucune pièce sélectionnée pour le déplacement.');
                     return;
