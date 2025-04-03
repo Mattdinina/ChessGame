@@ -69,6 +69,7 @@ for (let row = 0; row < 8; row++) {
 let selectedSquare = null;
 let currentPlayer = 'white';  // Le joueur actuel (blanc ou noir), à changer selon le tour
 let gameOver = false;
+let lastPawnMove = null; // Stockera la dernière position du pion qui a avancé de deux cases
 
 document.querySelectorAll('.square').forEach(square => {
     square.addEventListener('click', () => {
@@ -226,6 +227,31 @@ document.querySelectorAll('.square').forEach(square => {
             // Si le mouvement ne pose pas de problème, le valider
             if (originalDestPiece) {
                 console.log(`Pièce capturée : ${originalDestPiece.alt}`);
+            }
+
+            // Enregistrer le mouvement si c'est un pion qui avance de deux cases
+            if (selectedPiece.alt.toLowerCase().includes('pion')) {
+                const rowDiff = Math.abs(endRow - startRow);
+                if (rowDiff === 2) {
+                    lastPawnMove = {
+                        start: [startRow, startCol],
+                        end: [endRow, endCol]
+                    };
+                } else {
+                    lastPawnMove = null;
+                }
+
+                // Si c'est une prise en passant, retirer le pion capturé
+                if (Math.abs(endCol - startCol) === 1 && !square.querySelector('img')) {
+                    const capturedPawnSquare = document.getElementById(`square-${startRow}-${endCol}`);
+                    const capturedPawn = capturedPawnSquare.querySelector('img');
+                    if (capturedPawn) {
+                        console.log(`Prise en passant : ${capturedPawn.alt}`);
+                        capturedPawnSquare.removeChild(capturedPawn);
+                    }
+                }
+            } else {
+                lastPawnMove = null;
             }
 
             // Changer de joueur
@@ -400,7 +426,6 @@ function isValidKnightMove(startRow, startCol, endRow, endCol) {
 }
 
 // Vérification du mouvement du pion
-// Vérification du mouvement du pion
 function isValidPawnMove(direction, startRow, startCol, endRow, endCol) {
     const rowDiff = endRow - startRow; // Différence de rangée (sens compte)
     const colDiff = Math.abs(startCol - endCol); // Différence absolue de colonne
@@ -422,9 +447,25 @@ function isValidPawnMove(direction, startRow, startCol, endRow, endCol) {
         return true;
     }
 
-    // Capturer une pièce en diagonale
+    // Capture normale en diagonale
     if (colDiff === 1 && rowDiff === direction && isOccupiedByOpponent(endRow, endCol, direction === 1 ? 'black' : 'white')) {
         return true;
+    }
+
+    // Prise en passant
+    if (lastPawnMove && colDiff === 1 && Math.abs(rowDiff) === 1) {
+        const [lastRow, lastCol] = lastPawnMove.end;
+        const [prevRow, prevCol] = lastPawnMove.start;
+        
+        // Vérifier si le pion adverse est adjacent et a avancé de deux cases au dernier coup
+        if (
+            startRow === lastRow && // Même rangée que le pion adverse
+            Math.abs(startCol - lastCol) === 1 && // Colonne adjacente
+            Math.abs(prevRow - lastRow) === 2 && // Le pion adverse a avancé de deux cases
+            endCol === lastCol // La capture se fait sur la colonne du pion adverse
+        ) {
+            return true;
+        }
     }
 
     // console.log(`rowDiff=${rowDiff}, colDiff=${colDiff}, direction=${direction}`);
@@ -558,6 +599,11 @@ function roque() {
 }
 
 function isCheckmate() {
+    // D'abord, vérifier si le roi est en échec
+    if (!isCheck()) {
+        return false;  // Si le roi n'est pas en échec, ce n'est pas un échec et mat
+    }
+
     // Trouver toutes les pièces du joueur en échec
     const playerPieces = Array.from(document.querySelectorAll('img'))
         .filter(img => img.src.includes(currentPlayer === 'white' ? 'white' : 'black'));
@@ -577,10 +623,38 @@ function isCheckmate() {
                 const endSquare = document.getElementById(`square-${endRow}-${endCol}`);
                 const destPiece = endSquare.querySelector('img');
 
-                // Ne pas tester si la destination contient une pièce de même couleur
-                if (destPiece && destPiece.src.includes(currentPlayer === 'white' ? 'white' : 'black')) {
-                    continue;
+                // Vérifier si le mouvement serait valide selon les règles de la pièce
+                let isValidMove = false;
+                switch (piece.alt) {
+                    case 'Roi blanc':
+                    case 'Roi noir':
+                        isValidMove = isValidKingMove(startRow, startCol, endRow, endCol);
+                        break;
+                    case 'Reine blanche':
+                    case 'Reine noire':
+                        isValidMove = isValidQueenMove(startRow, startCol, endRow, endCol);
+                        break;
+                    case 'Tour blanche':
+                    case 'Tour noire':
+                        isValidMove = isValidRookMove(startRow, startCol, endRow, endCol);
+                        break;
+                    case 'Fou blanc':
+                    case 'Fou noir':
+                        isValidMove = isValidBishopMove(startRow, startCol, endRow, endCol);
+                        break;
+                    case 'Cavalier blanc':
+                    case 'Cavalier noir':
+                        isValidMove = isValidKnightMove(startRow, startCol, endRow, endCol);
+                        break;
+                    case 'Pion blanc':
+                        isValidMove = isValidPawnMove(1, startRow, startCol, endRow, endCol);
+                        break;
+                    case 'Pion noir':
+                        isValidMove = isValidPawnMove(-1, startRow, startCol, endRow, endCol);
+                        break;
                 }
+
+                if (!isValidMove) continue;
 
                 // Simuler le mouvement
                 startSquare.removeChild(piece);
@@ -601,6 +675,7 @@ function isCheckmate() {
 
                 // Si on trouve un mouvement qui sort de l'échec
                 if (!stillInCheck) {
+                    console.log(`${piece.alt} peut sauver le roi en se déplaçant en ${endRow},${endCol}`);
                     return false; // Ce n'est pas un échec et mat
                 }
             }
