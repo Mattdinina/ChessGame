@@ -709,42 +709,55 @@ function isCheckmate() {
 function promotePawn(pawn, row, col) {
     // Créer un menu de sélection
     const promotionMenu = document.createElement('div');
-    promotionMenu.classList.add('promotion-menu');
+    promotionMenu.style.position = 'absolute';
+    promotionMenu.style.display = 'flex';
+    promotionMenu.style.flexDirection = 'row';
+    promotionMenu.style.backgroundColor = 'white';
+    promotionMenu.style.border = '1px solid #ccc';
+    promotionMenu.style.borderRadius = '4px';
+    promotionMenu.style.padding = '2px';
+    promotionMenu.style.zIndex = '1000';
     
     // Définir les pièces disponibles pour la promotion
     const pieces = ['queen', 'rook', 'bishop', 'knight'];
     const color = currentPlayer === 'white' ? 'white' : 'black';
     
     pieces.forEach(piece => {
-        const pieceOption = document.createElement('img');
-        pieceOption.src = `./images/${piece}_${color}.png`;
-        pieceOption.alt = piece === 'queen' ? `Reine ${color === 'white' ? 'blanche' : 'noire'}` :
-                         piece === 'rook' ? `Tour ${color === 'white' ? 'blanche' : 'noire'}` :
-                         piece === 'bishop' ? `Fou ${color === 'white' ? 'blanc' : 'noir'}` :
-                         `Cavalier ${color === 'white' ? 'blanc' : 'noir'}`;
+        const pieceOption = document.createElement('div');
+        pieceOption.style.width = '30px';
+        pieceOption.style.height = '30px';
+        pieceOption.style.cursor = 'pointer';
+        pieceOption.style.display = 'flex';
+        pieceOption.style.alignItems = 'center';
+        pieceOption.style.justifyContent = 'center';
+        
+        const pieceImg = document.createElement('img');
+        pieceImg.src = `./images/${piece}_${color}.png`;
+        pieceImg.style.width = '25px';
+        pieceImg.style.height = '25px';
+        pieceImg.alt = piece === 'queen' ? `Reine ${color === 'white' ? 'blanche' : 'noire'}` :
+                      piece === 'rook' ? `Tour ${color === 'white' ? 'blanche' : 'noire'}` :
+                      piece === 'bishop' ? `Fou ${color === 'white' ? 'blanc' : 'noir'}` :
+                      `Cavalier ${color === 'white' ? 'blanc' : 'noir'}`;
         
         pieceOption.addEventListener('click', () => {
-            // Remplacer le pion par la pièce choisie
-            pawn.src = pieceOption.src;
-            pawn.alt = pieceOption.alt;
-            
-            // Retirer le menu de promotion
+            pawn.src = pieceImg.src;
+            pawn.alt = pieceImg.alt;
             document.body.removeChild(promotionMenu);
-            
-            // Continuer le jeu
             currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
             console.log(`C'est au tour des ${currentPlayer === 'white' ? 'blancs' : 'noirs'}.`);
         });
         
+        pieceOption.appendChild(pieceImg);
         promotionMenu.appendChild(pieceOption);
     });
     
     // Positionner le menu près du pion
     const square = document.getElementById(`square-${row}-${col}`);
     const rect = square.getBoundingClientRect();
-    promotionMenu.style.position = 'absolute';
-    promotionMenu.style.left = `${rect.left}px`;
-    promotionMenu.style.top = currentPlayer === 'white' ? `${rect.top - 120}px` : `${rect.bottom}px`;
+    
+    promotionMenu.style.left = `${rect.right}px`;
+    promotionMenu.style.top = `${rect.top}px`;
     
     // Ajouter le menu à la page
     document.body.appendChild(promotionMenu);
