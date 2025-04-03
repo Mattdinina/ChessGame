@@ -23,31 +23,85 @@ for (let row = 0; row < 8; row++) {
     }
 }
 
-// Configuration initiale des pièces
-const initialBoard = [
-    ['R', 'N', 'B', 'K', 'Q', 'B', 'N', 'R'],
-    ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
-    [null, null, null, null, null, null, null, null],
-    [null, null, null, null, null, null, null, null],
-    [null, null, null, null, null, null, null, null],
-    [null, null, null, null, null, null, null, null],
-    ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
-    ['rb', 'nb', 'bb', 'kb', 'qb', 'bb', 'nb', 'rb']
-];
-
-const pieceNames = {
-    R: "Tour blanche", N: "Cavalier blanc", B: "Fou blanc", Q: "Reine blanche",
-    K: "Roi blanc", P: "Pion blanc",
-    rb: "Tour noire", nb: "Cavalier noir", bb: "Fou noir", qb: "Reine noire",
-    kb: "Roi noir", p: "Pion noir"
+// Configuration des stats des pièces
+const pieceStats = {
+    chasseur: {
+        hp: 50,
+        attack: 10,
+        moveRange: 1
+    },
+    tortue: {
+        hp: 80,
+        attack: 8,
+        moveRange: 1
+    },
+    tigre: {
+        hp: 70,
+        attack: 25,
+        moveRange: 3
+    },
+    elephant: {
+        hp: 150,
+        attack: 30,
+        moveRange: 1
+    },
+    aigle: {
+        hp: 60,
+        attack: 20,
+        moveRange: 4
+    },
+    serpent: {
+        hp: 45,
+        attack: 15,
+        moveRange: 2
+    }
 };
 
+// Configuration des images
 const pieceImages = {
-    R: "./images/rook_white.png", N: "./images/knight_white.png", B: "./images/bishop_white.png",
-    Q: "./images/queen_white.png", K: "./images/king_white.png", P: "./images/pawn_white.png",
-    rb: "./images/rook_black.png", nb: "./images/knight_black.png", bb: "./images/bishop_black.png",
-    qb: "./images/queen_black.png", kb: "./images/king_black.png", p: "./images/pawn_black.png"
+    C: "./images/archer.png",          // Chasseur (blanc)
+    t: "./images/turtle.jpg",          // Tortue (blanche)
+    T: "./images/tiger Trident_0.png", // Tigre (blanc)
+    E: "./images/elephant.jpg",         // Éléphant (blanc)
+    A: "./images/eagle.jpg",           // Aigle (blanc)
+    S: "./images/snake.jpg",           // Serpent (blanc)
+    
+    Cb: "./images/archer.png",         // Chasseur (noir)
+    tb: "./images/turtle.jpg",         // Tortue (noire)
+    Tb: "./images/tiger Trident_0.png",// Tigre (noir)
+    Eb: "./images/elephant.jpg",        // Éléphant (noir)
+    Ab: "./images/eagle.jpg",          // Aigle (noir)
+    Sb: "./images/snake.jpg"           // Serpent (noir)
 };
+
+// Configuration des noms
+const pieceNames = {
+    C: "Chasseur blanc", 
+    t: "Tortue blanche",
+    T: "Tigre blanc", 
+    E: "Éléphant blanc", 
+    A: "Aigle blanc",
+    S: "Serpent blanc",
+    
+    Cb: "Chasseur noir",
+    tb: "Tortue noire",
+    Tb: "Tigre noir",
+    Eb: "Éléphant noir",
+    Ab: "Aigle noir",
+    Sb: "Serpent noir"
+};
+
+// Configuration initiale du plateau
+const initialBoard = [
+    ['T', 'E', 'A', 'C', 'S', 'A', 'E', 'T'],
+    ['t', 't', 't', 't', 't', 't', 't', 't'],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    ['tb', 'tb', 'tb', 'tb', 'tb', 'tb', 'tb', 'tb'],
+    ['Tb', 'Eb', 'Ab', 'Cb', 'Sb', 'Ab', 'Eb', 'Tb']
+];
 
 // Placer les pièces sur l'échiquier
 for (let row = 0; row < 8; row++) {
@@ -56,12 +110,8 @@ for (let row = 0; row < 8; row++) {
         const piece = initialBoard[row][col];
         
         if (piece) {
-            const pieceImg = document.createElement('img');
-            pieceImg.src = pieceImages[piece];  // Associer l'image correcte
-            pieceImg.alt = pieceNames[piece];  // Description textuelle
-            pieceImg.classList.add('piece');   // Classe pour styliser l'image
-            
-            square.appendChild(pieceImg);      // Ajouter l'image dans la case
+            const pieceContainer = createPiece(piece, pieceImages[piece], pieceNames[piece]);
+            square.appendChild(pieceContainer);
         }
     }
 }
@@ -78,208 +128,74 @@ document.querySelectorAll('.square').forEach(square => {
             return;
         }
         
-        const piece = square.querySelector('img');
+        const pieceContainer = square.querySelector('.piece-container');
+        const piece = pieceContainer ? pieceContainer.querySelector('img') : null;
         
         // Si aucune pièce n'est sélectionnée
         if (!selectedSquare) {
             // Vérifier si la pièce appartient au joueur actuel
-            if (piece && 
-                ((currentPlayer === 'white' && piece.src.includes('white')) || 
-                (currentPlayer === 'black' && piece.src.includes('black')))) {
-                selectedSquare = square;
-                selectedSquare.classList.add('selected');
-            } else {
-                console.log('Sélection invalide: Vous devez cliquer sur une pièce de votre couleur.');
+            if (piece) {
+                const isWhitePiece = piece.alt.toLowerCase().includes('blanc');
+                if ((currentPlayer === 'white' && isWhitePiece) || 
+                    (currentPlayer === 'black' && !isWhitePiece)) {
+                    selectedSquare = square;
+                    selectedSquare.classList.add('selected');
+                    console.log("Pièce sélectionnée:", piece.alt);
+                } else {
+                    console.log('Sélection invalide: Vous devez cliquer sur une pièce de votre couleur.');
+                }
             }
             return;
         }
 
-            // Si une pièce est déjà sélectionnée
-            if (selectedSquare === square) {
-                // Si la même case est cliquée, désélectionner
-                selectedSquare.classList.remove('selected');
-                selectedSquare = null;
-                return;
-            }
+        // Si une pièce est déjà sélectionnée
+        if (selectedSquare === square) {
+            // Désélectionner si on clique sur la même case
+            selectedSquare.classList.remove('selected');
+            selectedSquare = null;
+            return;
+        }
 
-            // Si la nouvelle case contient une pièce de la même couleur, la sélectionner
-            if (piece && 
-                ((currentPlayer === 'white' && piece.src.includes('white')) || 
-                (currentPlayer === 'black' && piece.src.includes('black')))) {
+        // Si on clique sur une autre pièce de notre couleur, la sélectionner
+        if (piece) {
+            const isWhitePiece = piece.alt.toLowerCase().includes('blanc');
+            if ((currentPlayer === 'white' && isWhitePiece) || 
+                (currentPlayer === 'black' && !isWhitePiece)) {
                 selectedSquare.classList.remove('selected');
                 selectedSquare = square;
                 selectedSquare.classList.add('selected');
                 return;
+            }
         }
 
         // Tenter le déplacement
-            const startRow = parseInt(selectedSquare.id.split('-')[1]);
-            const startCol = parseInt(selectedSquare.id.split('-')[2]);
-            const endRow = parseInt(square.id.split('-')[1]);
-            const endCol = parseInt(square.id.split('-')[2]);
-            const selectedPiece = selectedSquare.querySelector('img');
-        const pieceType = selectedPiece.alt;
+        const startRow = parseInt(selectedSquare.id.split('-')[1]);
+        const startCol = parseInt(selectedSquare.id.split('-')[2]);
+        const endRow = parseInt(square.id.split('-')[1]);
+        const endCol = parseInt(square.id.split('-')[2]);
 
-        // Si le roi est en échec, vérifier d'abord si nous sommes en échec
-        if (isCheck()) {
-            // Simuler le mouvement pour voir s'il sort de l'échec
-            const originalDestPiece = square.querySelector('img');
+        if (isValidMove(startRow, startCol, endRow, endCol)) {
+            console.log("Mouvement valide");
+            const movingPieceContainer = selectedSquare.querySelector('.piece-container');
+            const targetPieceContainer = square.querySelector('.piece-container');
             
-            // Sauvegarder l'état actuel
-            selectedSquare.removeChild(selectedPiece);
-            if (originalDestPiece) {
-                square.removeChild(originalDestPiece);
+            if (targetPieceContainer) {
+                // Combat
+                const attackingPiece = movingPieceContainer.querySelector('img');
+                const defendingPiece = targetPieceContainer.querySelector('img');
+                combat(attackingPiece, defendingPiece);
+                if (gameOver) return;
             }
-            square.appendChild(selectedPiece); 
-
-            // Si le roi est toujours en échec après le mouvement
-            if (isCheck()) {
-                // Annuler le mouvement simulé
-                square.removeChild(selectedPiece);
-                selectedSquare.appendChild(selectedPiece);
-                if (originalDestPiece) {
-                    square.appendChild(originalDestPiece);
-                }
-                console.log("Ce mouvement ne sort pas de l'échec !");
-                selectedSquare.classList.remove('selected');
-                selectedSquare = null;
-                return;
-            }
-
-            // Remettre les pièces en place pour la vérification normale du mouvement
-            square.removeChild(selectedPiece);
-            selectedSquare.appendChild(selectedPiece);
-            if (originalDestPiece) {
-                square.appendChild(originalDestPiece);
-            }
-        }
-
-        // Vérifier si le mouvement est valide pour la pièce
-        let isValid = false;
-            switch (pieceType) {
-            case 'Roi blanc':
-            case 'Roi noir':
-                    isValid = isValidKingMove(startRow, startCol, endRow, endCol);
-                    break;
-            case 'Reine blanche':
-            case 'Reine noire':
-                    isValid = isValidQueenMove(startRow, startCol, endRow, endCol);
-                    break;
-            case 'Tour blanche':
-            case 'Tour noire':
-                    isValid = isValidRookMove(startRow, startCol, endRow, endCol);
-                    break;
-            case 'Fou blanc':
-            case 'Fou noir':
-                    isValid = isValidBishopMove(startRow, startCol, endRow, endCol);
-                    break;
-            case 'Cavalier blanc':
-            case 'Cavalier noir':
-                    isValid = isValidKnightMove(startRow, startCol, endRow, endCol);
-                    break;
-            case 'Pion blanc':
-                    isValid = isValidPawnMove(1, startRow, startCol, endRow, endCol);
-                    break;
-            case 'Pion noir':
-                    isValid = isValidPawnMove(-1, startRow, startCol, endRow, endCol);
-                    break;
-            }
-
-            if (isValid) {
-            // Simuler le mouvement pour vérifier s'il met ou laisse le roi en échec
-            const originalDestPiece = square.querySelector('img');
             
-            // Sauvegarder l'état actuel
-            selectedSquare.removeChild(selectedPiece);
+            // Déplacement
+            selectedSquare.removeChild(movingPieceContainer);
+            square.appendChild(movingPieceContainer);
             
-            // Gérer la prise en passant avant d'effectuer le mouvement
-            let capturedPawn = null;
-            let capturedPawnSquare = null;
-            if (selectedPiece.alt.toLowerCase().includes('pion')) {
-                const rowDiff = Math.abs(endRow - startRow);
-                const colDiff = Math.abs(endCol - startCol);
-                
-                // Si c'est une prise en passant
-                if (colDiff === 1 && !square.querySelector('img') && lastPawnMove) {
-                    capturedPawnSquare = document.getElementById(`square-${startRow}-${endCol}`);
-                    capturedPawn = capturedPawnSquare.querySelector('img');
-                    if (capturedPawn) {
-                        console.log(`Prise en passant : ${capturedPawn.alt}`);
-                        capturedPawnSquare.removeChild(capturedPawn);
-                    }
-                }
-            }
-
-            if (originalDestPiece) {
-                square.removeChild(originalDestPiece);
-            }
-            square.appendChild(selectedPiece);
-
-            // Vérifier si notre propre roi est en échec après le mouvement
-            if (isCheck()) {
-                console.log("Ce mouvement met ou laisse votre roi en échec !");
-                // Annuler le mouvement
-                square.removeChild(selectedPiece);
-                selectedSquare.appendChild(selectedPiece);
-                if (originalDestPiece) {
-                    square.appendChild(originalDestPiece);
-                }
-                selectedSquare.classList.remove('selected');
-                selectedSquare = null;
-                return;
-            }
-
-            // Changer temporairement de joueur pour vérifier si le roi adverse est en échec
-            currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
-            if (isCheck()) {
-                console.log(`Le roi ${currentPlayer} est en échec !`);
-                if (isCheckmate()) {
-                    gameOver = true;
-                    const winner = currentPlayer === 'white' ? 'noirs' : 'blancs';
-                    console.log(`Échec et mat ! Les ${winner} ont gagné !`);
-                    return;
-                }
-            }
-            // Revenir au joueur qui vient de jouer
-            currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
-
-            // Si le mouvement est finalement validé, mettre à jour lastPawnMove
-            if (selectedPiece.alt.toLowerCase().includes('pion')) {
-                const rowDiff = Math.abs(endRow - startRow);
-                if (rowDiff === 2) {
-                    lastPawnMove = {
-                        start: [startRow, startCol],
-                        end: [endRow, endCol]
-                    };
-                } else {
-                    lastPawnMove = null;
-                }
-            } else {
-                lastPawnMove = null;
-            }
-
-            // Vérifier si un pion atteint la dernière rangée
-            if (selectedPiece.alt.toLowerCase().includes('pion')) {
-                // Pour les pions blancs atteignant la rangée 7
-                if (currentPlayer === 'white' && endRow === 7) {
-                    promotePawn(selectedPiece, endRow, endCol);
-                    return; // Arrêter ici pour attendre la sélection de la promotion
-                }
-                // Pour les pions noirs atteignant la rangée 0
-                else if (currentPlayer === 'black' && endRow === 0) {
-                    promotePawn(selectedPiece, endRow, endCol);
-                    return; // Arrêter ici pour attendre la sélection de la promotion
-                }
-            }
-
             // Changer de joueur
             currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
-            console.log(`C'est au tour des ${currentPlayer === 'white' ? 'blancs' : 'noirs'}.`);
+            console.log("Tour de:", currentPlayer);
         } else {
-            console.log('Mouvement invalide.');
-            // Remettre la pièce à sa position d'origine si nécessaire
-            square.removeChild(selectedPiece);
-            selectedSquare.appendChild(selectedPiece);
+            console.log("Mouvement invalide");
         }
 
         // Réinitialiser la sélection
@@ -291,13 +207,13 @@ document.querySelectorAll('.square').forEach(square => {
 // Fonction pour vérifier si une case est occupée
 function isOccupied(row, col) {
     const square = document.getElementById(`square-${row}-${col}`);
-    return square.querySelector('img') !== null;
+    return square.querySelector('.piece-container') !== null;
 }
 
 // Fonction pour vérifier si une case est occupée par une pièce adverse
 function isOccupiedByOpponent(row, col, opponentColor) {
     const square = document.getElementById(`square-${row}-${col}`);
-    const piece = square.querySelector('img');
+    const piece = square.querySelector('.piece-container img');
     if (piece) {
         return piece.src.includes(opponentColor);
     }
@@ -761,4 +677,205 @@ function promotePawn(pawn, row, col) {
     
     // Ajouter le menu à la page
     document.body.appendChild(promotionMenu);
+}
+
+// Fonction pour créer une pièce avec sa barre de vie
+function createPiece(pieceType, pieceImage, pieceName) {
+    const container = document.createElement('div');
+    container.classList.add('piece-container');
+
+    const pieceImg = document.createElement('img');
+    pieceImg.src = pieceImage;
+    pieceImg.alt = pieceName;
+    pieceImg.classList.add('piece');
+    
+    // Déterminer le type de base pour les stats
+    let baseType = pieceType.toLowerCase().replace('b', '');
+    switch(baseType) {
+        case 'c': baseType = 'chasseur'; break;
+        case 't': baseType = 'tortue'; break;
+        case 'T': baseType = 'tigre'; break;
+        case 'e': baseType = 'elephant'; break;
+        case 'a': baseType = 'aigle'; break;
+        case 's': baseType = 'serpent'; break;
+    }
+
+    const stats = pieceStats[baseType];
+    pieceImg.dataset.maxHp = stats.hp;
+    pieceImg.dataset.currentHp = stats.hp;
+    pieceImg.dataset.attack = stats.attack;
+
+    container.appendChild(pieceImg);
+    container.appendChild(createHealthBar(pieceImg));
+    
+    return container;
+}
+
+// Fonction pour mettre à jour la barre de vie
+function updateHealthBar(piece) {
+    const container = piece.parentElement;
+    const healthBar = container.querySelector('.health-fill');
+    const currentHp = parseInt(piece.dataset.currentHp);
+    const maxHp = parseInt(piece.dataset.maxHp);
+    
+    healthBar.style.width = `${(currentHp / maxHp) * 100}%`;
+    
+    if (currentHp / maxHp <= 0.25) {
+        healthBar.style.backgroundColor = '#e74c3c';
+    } else if (currentHp / maxHp <= 0.5) {
+        healthBar.style.backgroundColor = '#f1c40f';
+    } else {
+        healthBar.style.backgroundColor = '#2ecc71';
+    }
+}
+
+// Fonction de combat
+function combat(attacker, defender) {
+    console.log("Combat entre:", attacker.alt, "et", defender.alt);
+    
+    // Calculer les dégâts
+    const damage = parseInt(attacker.dataset.attack);
+    const defenderCurrentHp = parseInt(defender.dataset.currentHp);
+    
+    // Appliquer les dégâts au défenseur
+    defender.dataset.currentHp = Math.max(0, defenderCurrentHp - damage);
+    console.log(`${defender.alt} prend ${damage} dégâts, PV restants: ${defender.dataset.currentHp}`);
+    
+    // Mettre à jour la barre de vie du défenseur
+    updateHealthBar(defender);
+    
+    // Vérifier si le défenseur est vaincu
+    if (parseInt(defender.dataset.currentHp) <= 0) {
+        console.log(`${defender.alt} est vaincu !`);
+        defender.parentElement.remove();
+        
+        // Vérifier si c'était un chasseur
+        if (defender.alt.includes('Chasseur')) {
+            gameOver = true;
+            const winner = defender.alt.includes('blanc') ? 'noirs' : 'blancs';
+            alert(`Partie terminée ! Les ${winner} ont gagné !`);
+        }
+    }
+}
+
+// Améliorer l'affichage des barres de vie
+function createHealthBar(piece) {
+    const healthBar = document.createElement('div');
+    healthBar.classList.add('health-bar');
+    
+    const healthFill = document.createElement('div');
+    healthFill.classList.add('health-fill');
+    healthFill.style.width = '100%';
+    
+    healthBar.appendChild(healthFill);
+    return healthBar;
+}
+
+// Mettre à jour le CSS pour positionner correctement les barres de vie
+const styles = `
+    .piece-container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .piece {
+        width: 80%;
+        height: 80%;
+        object-fit: contain;
+        position: relative;
+        z-index: 1;
+    }
+
+    .health-bar {
+        position: absolute;
+        bottom: 2px;
+        left: 10%;
+        width: 80%;
+        height: 4px;
+        background: #444;
+        border-radius: 2px;
+        overflow: hidden;
+        z-index: 2;
+    }
+
+    .health-fill {
+        height: 100%;
+        background: #2ecc71;
+        transition: width 0.3s ease, background-color 0.3s ease;
+    }
+`;
+
+// Ajouter les styles au document
+if (!document.querySelector('#game-styles')) {
+    const styleSheet = document.createElement('style');
+    styleSheet.id = 'game-styles';
+    styleSheet.textContent = styles;
+    document.head.appendChild(styleSheet);
+}
+
+function isValidMove(startRow, startCol, endRow, endCol) {
+    const startSquare = document.getElementById(`square-${startRow}-${startCol}`);
+    const piece = startSquare.querySelector('.piece-container img');
+    const pieceName = piece.alt.toLowerCase();
+    
+    const rowDiff = Math.abs(endRow - startRow);
+    const colDiff = Math.abs(endCol - startCol);
+
+    console.log("Vérification du mouvement pour:", pieceName);
+    console.log("De:", startRow, startCol, "À:", endRow, endCol);
+    console.log("Différences:", rowDiff, colDiff);
+    
+    // Chasseur
+    if (pieceName.includes('chasseur')) {
+        console.log("Mouvement de chasseur");
+        return rowDiff <= 1 && colDiff <= 1;
+    }
+    
+    // Tortue
+    if (pieceName.includes('tortue')) {
+        console.log("Mouvement de tortue");
+        const direction = pieceName.includes('blanche') ? 1 : -1;
+        // Mouvement normal vers l'avant
+        if (colDiff === 0) {
+            return (endRow - startRow) === direction;
+        }
+        // Capture en diagonale
+        if (colDiff === 1 && (endRow - startRow) === direction) {
+            const targetSquare = document.getElementById(`square-${endRow}-${endCol}`);
+            return targetSquare.querySelector('.piece-container') !== null;
+        }
+        return false;
+    }
+    
+    // Tigre
+    if (pieceName.includes('tigre')) {
+        console.log("Mouvement de tigre");
+        return rowDiff <= 3 && colDiff <= 3;
+    }
+    
+    // Éléphant
+    if (pieceName.includes('elephant')) {
+        console.log("Mouvement d'éléphant");
+        return rowDiff <= 1 && colDiff <= 1;
+    }
+    
+    // Aigle
+    if (pieceName.includes('aigle')) {
+        console.log("Mouvement d'aigle");
+        return (rowDiff === 0 || colDiff === 0 || rowDiff === colDiff);
+    }
+    
+    // Serpent
+    if (pieceName.includes('serpent')) {
+        console.log("Mouvement de serpent");
+        return (rowDiff === 2 && colDiff === 1) || (rowDiff === 1 && colDiff === 2);
+    }
+
+    console.log("Type de pièce non reconnu");
+    return false;
 }
