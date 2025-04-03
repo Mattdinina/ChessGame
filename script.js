@@ -191,6 +191,25 @@ document.querySelectorAll('.square').forEach(square => {
             
             // Sauvegarder l'état actuel
             selectedSquare.removeChild(selectedPiece);
+            
+            // Gérer la prise en passant avant d'effectuer le mouvement
+            let capturedPawn = null;
+            let capturedPawnSquare = null;
+            if (selectedPiece.alt.toLowerCase().includes('pion')) {
+                const rowDiff = Math.abs(endRow - startRow);
+                const colDiff = Math.abs(endCol - startCol);
+                
+                // Si c'est une prise en passant
+                if (colDiff === 1 && !square.querySelector('img') && lastPawnMove) {
+                    capturedPawnSquare = document.getElementById(`square-${startRow}-${endCol}`);
+                    capturedPawn = capturedPawnSquare.querySelector('img');
+                    if (capturedPawn) {
+                        console.log(`Prise en passant : ${capturedPawn.alt}`);
+                        capturedPawnSquare.removeChild(capturedPawn);
+                    }
+                }
+            }
+
             if (originalDestPiece) {
                 square.removeChild(originalDestPiece);
             }
@@ -224,12 +243,7 @@ document.querySelectorAll('.square').forEach(square => {
             // Revenir au joueur qui vient de jouer
             currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
 
-            // Si le mouvement ne pose pas de problème, le valider
-            if (originalDestPiece) {
-                console.log(`Pièce capturée : ${originalDestPiece.alt}`);
-            }
-
-            // Enregistrer le mouvement si c'est un pion qui avance de deux cases
+            // Si le mouvement est finalement validé, mettre à jour lastPawnMove
             if (selectedPiece.alt.toLowerCase().includes('pion')) {
                 const rowDiff = Math.abs(endRow - startRow);
                 if (rowDiff === 2) {
@@ -240,18 +254,22 @@ document.querySelectorAll('.square').forEach(square => {
                 } else {
                     lastPawnMove = null;
                 }
-
-                // Si c'est une prise en passant, retirer le pion capturé
-                if (Math.abs(endCol - startCol) === 1 && !square.querySelector('img')) {
-                    const capturedPawnSquare = document.getElementById(`square-${startRow}-${endCol}`);
-                    const capturedPawn = capturedPawnSquare.querySelector('img');
-                    if (capturedPawn) {
-                        console.log(`Prise en passant : ${capturedPawn.alt}`);
-                        capturedPawnSquare.removeChild(capturedPawn);
-                    }
-                }
             } else {
                 lastPawnMove = null;
+            }
+
+            // Vérifier si un pion atteint la dernière rangée
+            if (selectedPiece.alt.toLowerCase().includes('pion')) {
+                // Pour les pions blancs atteignant la rangée 7
+                if (currentPlayer === 'white' && endRow === 7) {
+                    promotePawn(selectedPiece, endRow, endCol);
+                    return; // Arrêter ici pour attendre la sélection de la promotion
+                }
+                // Pour les pions noirs atteignant la rangée 0
+                else if (currentPlayer === 'black' && endRow === 0) {
+                    promotePawn(selectedPiece, endRow, endCol);
+                    return; // Arrêter ici pour attendre la sélection de la promotion
+                }
             }
 
             // Changer de joueur
@@ -685,4 +703,49 @@ function isCheckmate() {
     // Si on arrive ici, aucun mouvement ne peut sortir de l'échec
     console.log('Échec et mat !');
     return true;
+}
+
+// Ajouter cette fonction pour gérer la promotion du pion
+function promotePawn(pawn, row, col) {
+    // Créer un menu de sélection
+    const promotionMenu = document.createElement('div');
+    promotionMenu.classList.add('promotion-menu');
+    
+    // Définir les pièces disponibles pour la promotion
+    const pieces = ['queen', 'rook', 'bishop', 'knight'];
+    const color = currentPlayer === 'white' ? 'white' : 'black';
+    
+    pieces.forEach(piece => {
+        const pieceOption = document.createElement('img');
+        pieceOption.src = `./images/${piece}_${color}.png`;
+        pieceOption.alt = piece === 'queen' ? `Reine ${color === 'white' ? 'blanche' : 'noire'}` :
+                         piece === 'rook' ? `Tour ${color === 'white' ? 'blanche' : 'noire'}` :
+                         piece === 'bishop' ? `Fou ${color === 'white' ? 'blanc' : 'noir'}` :
+                         `Cavalier ${color === 'white' ? 'blanc' : 'noir'}`;
+        
+        pieceOption.addEventListener('click', () => {
+            // Remplacer le pion par la pièce choisie
+            pawn.src = pieceOption.src;
+            pawn.alt = pieceOption.alt;
+            
+            // Retirer le menu de promotion
+            document.body.removeChild(promotionMenu);
+            
+            // Continuer le jeu
+            currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
+            console.log(`C'est au tour des ${currentPlayer === 'white' ? 'blancs' : 'noirs'}.`);
+        });
+        
+        promotionMenu.appendChild(pieceOption);
+    });
+    
+    // Positionner le menu près du pion
+    const square = document.getElementById(`square-${row}-${col}`);
+    const rect = square.getBoundingClientRect();
+    promotionMenu.style.position = 'absolute';
+    promotionMenu.style.left = `${rect.left}px`;
+    promotionMenu.style.top = currentPlayer === 'white' ? `${rect.top - 120}px` : `${rect.bottom}px`;
+    
+    // Ajouter le menu à la page
+    document.body.appendChild(promotionMenu);
 }
