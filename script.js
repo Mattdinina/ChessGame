@@ -53,7 +53,9 @@ const pieceStats = {
     serpent: {
         hp: 45,
         attack: 15,
-        moveRange: 2
+        moveRange: 2,
+        poisonDamage: 5,  // Dégâts de poison par tour
+        poisonDuration: 4  // Durée du poison en tours
     }
 };
 
@@ -178,22 +180,152 @@ document.querySelectorAll('.square').forEach(square => {
             console.log("Mouvement valide");
             const movingPieceContainer = selectedSquare.querySelector('.piece-container');
             const targetPieceContainer = square.querySelector('.piece-container');
+            const attackingPiece = movingPieceContainer.querySelector('img');
+            const pieceName = attackingPiece.alt.toLowerCase();
             
             if (targetPieceContainer) {
                 // Combat
-                const attackingPiece = movingPieceContainer.querySelector('img');
                 const defendingPiece = targetPieceContainer.querySelector('img');
-                combat(attackingPiece, defendingPiece);
-                if (gameOver) return;
+                
+                // Vérifier si c'est un aigle qui attaque
+                if (pieceName.includes('aigle')) {
+                    console.log("Attaque d'aigle à distance");
+                    
+                    // Calculer la position d'atterrissage de l'aigle
+                    const landingPosition = calculateEagleLandingPosition(startRow, startCol, endRow, endCol);
+                    
+                    if (landingPosition) {
+                        // Déplacer l'aigle à la position d'atterrissage
+                        const landingSquare = document.getElementById(`square-${landingPosition.row}-${landingPosition.col}`);
+                        
+                        // Créer une copie du conteneur pour éviter les problèmes de référence
+                        const pieceContainerClone = movingPieceContainer.cloneNode(true);
+                        
+                        // Supprimer l'ancien conteneur
+                        selectedSquare.removeChild(movingPieceContainer);
+                        
+                        // Ajouter le nouveau conteneur à la case d'atterrissage
+                        landingSquare.appendChild(pieceContainerClone);
+                        
+                        // Attendre un court instant pour simuler le déplacement
+                        setTimeout(() => {
+                            // Infliger les dégâts à la cible
+                            combat(attackingPiece, defendingPiece);
+                            if (gameOver) return;
+                            
+                            // Changer de joueur
+                            currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
+                            console.log("Tour de:", currentPlayer);
+                        }, 500);
+                    } else {
+                        console.log("Position d'atterrissage invalide pour l'aigle");
+                    }
+                } 
+                // Vérifier si c'est un tigre qui attaque
+                else if (pieceName.includes('tigre')) {
+                    console.log("Attaque de tigre");
+                    
+                    // Vérifier si le tigre reste sur place
+                    if (startRow === endRow && startCol === endCol) {
+                        // Le tigre attaque un ennemi adjacent sans se déplacer
+                        combat(attackingPiece, defendingPiece);
+                        if (gameOver) return;
+                        
+                        // Changer de joueur
+                        currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
+                        console.log("Tour de:", currentPlayer);
+                    } else {
+                        // Le tigre bondit sur une pièce ennemie
+                        // Vérifier si la case de destination contient un ennemi
+                        if (targetPieceContainer) {
+                            // Le tigre attaque l'ennemi sans se déplacer à sa position
+                            // Calculer la position d'arrivée (une case avant la cible)
+                            let landingRow = endRow;
+                            let landingCol = endCol;
+                            
+                            // Déterminer la direction du mouvement
+                            if (startRow < endRow) landingRow = endRow - 1; // Mouvement vers le bas
+                            else if (startRow > endRow) landingRow = endRow + 1; // Mouvement vers le haut
+                            
+                            if (startCol < endCol) landingCol = endCol - 1; // Mouvement vers la droite
+                            else if (startCol > endCol) landingCol = endCol + 1; // Mouvement vers la gauche
+                            
+                            // Vérifier que la position d'atterrissage est valide
+                            if (landingRow >= 0 && landingRow < 8 && landingCol >= 0 && landingCol < 8) {
+                                // Trouver la case d'atterrissage
+                                const landingSquare = document.getElementById(`square-${landingRow}-${landingCol}`);
+                                
+                                // Créer une copie du conteneur pour éviter les problèmes de référence
+                                const pieceContainerClone = movingPieceContainer.cloneNode(true);
+                                
+                                // Supprimer l'ancien conteneur
+                                selectedSquare.removeChild(movingPieceContainer);
+                                
+                                // Ajouter le nouveau conteneur à la case d'atterrissage
+                                landingSquare.appendChild(pieceContainerClone);
+                                
+                                // Attendre un court instant pour simuler le bond
+                                setTimeout(() => {
+                                    // Infliger les dégâts à la cible
+                                    combat(attackingPiece, defendingPiece);
+                                    if (gameOver) return;
+                                    
+                                    // Changer de joueur
+                                    currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
+                                    console.log("Tour de:", currentPlayer);
+                                }, 500);
+                            } else {
+                                console.log("Position d'atterrissage invalide pour le tigre");
+                            }
+                        } else {
+                            // Le tigre se déplace vers une case vide
+                            // Créer une copie du conteneur pour éviter les problèmes de référence
+                            const pieceContainerClone = movingPieceContainer.cloneNode(true);
+                            
+                            // Supprimer l'ancien conteneur
+                            selectedSquare.removeChild(movingPieceContainer);
+                            
+                            // Ajouter le nouveau conteneur à la case de destination
+                            square.appendChild(pieceContainerClone);
+                            
+                            // Changer de joueur
+                            currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
+                            console.log("Tour de:", currentPlayer);
+                        }
+                    }
+                } else {
+                    // Combat normal pour les autres pièces
+                    combat(attackingPiece, defendingPiece);
+                    if (gameOver) return;
+                    
+                    // Ne pas déplacer la pièce après un combat
+                    // La pièce reste sur sa case d'origine
+                    
+                    // Changer de joueur
+                    currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
+                    console.log("Tour de:", currentPlayer);
+                    
+                    // Appliquer les dégâts de poison au début du tour
+                    applyPoisonDamage();
+                }
+            } else {
+                // Déplacement normal (sans combat)
+                // Créer une copie du conteneur pour éviter les problèmes de référence
+                const pieceContainerClone = movingPieceContainer.cloneNode(true);
+                
+                // Supprimer l'ancien conteneur
+                selectedSquare.removeChild(movingPieceContainer);
+                
+                // Ajouter le nouveau conteneur à la case de destination
+                square.appendChild(pieceContainerClone);
+                
+                // Changer de joueur
+                currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
+                console.log("Tour de:", currentPlayer);
+                
+                // Appliquer les dégâts de poison au début du tour
+                applyPoisonDamage();
             }
-            
-            // Déplacement
-            selectedSquare.removeChild(movingPieceContainer);
-            square.appendChild(movingPieceContainer);
-            
-            // Changer de joueur
-            currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
-            console.log("Tour de:", currentPlayer);
         } else {
             console.log("Mouvement invalide");
         }
@@ -718,15 +850,32 @@ function updateHealthBar(piece) {
     const currentHp = parseInt(piece.dataset.currentHp);
     const maxHp = parseInt(piece.dataset.maxHp);
     
-    healthBar.style.width = `${(currentHp / maxHp) * 100}%`;
-    
-    if (currentHp / maxHp <= 0.25) {
-        healthBar.style.backgroundColor = '#e74c3c';
-    } else if (currentHp / maxHp <= 0.5) {
-        healthBar.style.backgroundColor = '#f1c40f';
-    } else {
-        healthBar.style.backgroundColor = '#2ecc71';
+    // S'assurer que les valeurs sont valides
+    if (isNaN(currentHp) || isNaN(maxHp) || maxHp <= 0) {
+        console.error("Valeurs de PV invalides:", currentHp, maxHp);
+        return;
     }
+    
+    // Calculer le pourcentage de vie restant
+    const healthPercentage = Math.max(0, Math.min(100, (currentHp / maxHp) * 100));
+    
+    // Mettre à jour la largeur de la barre de vie
+    healthBar.style.width = `${healthPercentage}%`;
+    
+    // Mettre à jour la couleur en fonction du pourcentage de vie
+    if (healthPercentage <= 25) {
+        healthBar.style.backgroundColor = '#e74c3c'; // Rouge
+    } else if (healthPercentage <= 50) {
+        healthBar.style.backgroundColor = '#f1c40f'; // Jaune
+    } else {
+        healthBar.style.backgroundColor = '#2ecc71'; // Vert
+    }
+    
+    // Ajouter un effet visuel pour indiquer les dégâts
+    healthBar.classList.add('damage-effect');
+    setTimeout(() => {
+        healthBar.classList.remove('damage-effect');
+    }, 300);
 }
 
 // Fonction de combat
@@ -744,6 +893,12 @@ function combat(attacker, defender) {
     // Mettre à jour la barre de vie du défenseur
     updateHealthBar(defender);
     
+    // Vérifier si c'est un serpent qui attaque
+    if (attacker.alt.toLowerCase().includes('serpent')) {
+        // Appliquer l'effet de poison
+        applyPoison(defender);
+    }
+    
     // Vérifier si le défenseur est vaincu
     if (parseInt(defender.dataset.currentHp) <= 0) {
         console.log(`${defender.alt} est vaincu !`);
@@ -756,6 +911,80 @@ function combat(attacker, defender) {
             alert(`Partie terminée ! Les ${winner} ont gagné !`);
         }
     }
+}
+
+// Fonction pour appliquer l'effet de poison
+function applyPoison(defender) {
+    // Vérifier si la pièce est déjà empoisonnée
+    if (defender.dataset.poisoned === 'true') {
+        // Si déjà empoisonnée, réinitialiser le compteur de tours
+        defender.dataset.poisonTurnsLeft = pieceStats.serpent.poisonDuration;
+        console.log(`${defender.alt} est déjà empoisonné, le poison est renouvelé pour ${pieceStats.serpent.poisonDuration} tours.`);
+    } else {
+        // Sinon, appliquer le poison
+        defender.dataset.poisoned = 'true';
+        defender.dataset.poisonTurnsLeft = pieceStats.serpent.poisonDuration;
+        defender.dataset.poisonDamage = pieceStats.serpent.poisonDamage;
+        
+        // Ajouter un indicateur visuel de poison
+        const poisonIndicator = document.createElement('div');
+        poisonIndicator.classList.add('poison-indicator');
+        poisonIndicator.textContent = '☠️';
+        defender.parentElement.appendChild(poisonIndicator);
+        
+        console.log(`${defender.alt} est empoisonné pour ${pieceStats.serpent.poisonDuration} tours.`);
+    }
+}
+
+// Fonction pour appliquer les dégâts de poison au début du tour
+function applyPoisonDamage() {
+    // Trouver toutes les pièces empoisonnées
+    const poisonedPieces = document.querySelectorAll('img[data-poisoned="true"]');
+    
+    poisonedPieces.forEach(piece => {
+        // Récupérer les informations de poison
+        const poisonTurnsLeft = parseInt(piece.dataset.poisonTurnsLeft);
+        const poisonDamage = parseInt(piece.dataset.poisonDamage);
+        
+        // Appliquer les dégâts de poison
+        const currentHp = parseInt(piece.dataset.currentHp);
+        piece.dataset.currentHp = Math.max(0, currentHp - poisonDamage);
+        
+        // Mettre à jour la barre de vie
+        updateHealthBar(piece);
+        
+        // Réduire le nombre de tours restants
+        piece.dataset.poisonTurnsLeft = poisonTurnsLeft - 1;
+        
+        console.log(`${piece.alt} subit ${poisonDamage} dégâts de poison. Il reste ${piece.dataset.poisonTurnsLeft} tours de poison.`);
+        
+        // Vérifier si le poison est terminé
+        if (parseInt(piece.dataset.poisonTurnsLeft) <= 0) {
+            // Supprimer l'effet de poison
+            piece.dataset.poisoned = 'false';
+            
+            // Supprimer l'indicateur visuel de poison
+            const poisonIndicator = piece.parentElement.querySelector('.poison-indicator');
+            if (poisonIndicator) {
+                poisonIndicator.remove();
+            }
+            
+            console.log(`${piece.alt} n'est plus empoisonné.`);
+        }
+        
+        // Vérifier si la pièce est vaincue
+        if (parseInt(piece.dataset.currentHp) <= 0) {
+            console.log(`${piece.alt} est vaincu par le poison !`);
+            piece.parentElement.remove();
+            
+            // Vérifier si c'était un chasseur
+            if (piece.alt.includes('Chasseur')) {
+                gameOver = true;
+                const winner = piece.alt.includes('blanc') ? 'noirs' : 'blancs';
+                alert(`Partie terminée ! Les ${winner} ont gagné !`);
+            }
+        }
+    });
 }
 
 // Améliorer l'affichage des barres de vie
@@ -773,6 +1002,39 @@ function createHealthBar(piece) {
 
 // Mettre à jour le CSS pour positionner correctement les barres de vie
 const styles = `
+    #chessboard {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        grid-template-rows: repeat(8, 1fr);
+        width: 100%;
+        height: 100%;
+        max-width: 800px;
+        max-height: 800px;
+        margin: 0 auto;
+    }
+
+    .square {
+        aspect-ratio: 1 / 1;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+    }
+
+    .white {
+        background-color: #f0d9b5;
+    }
+
+    .black {
+        background-color: #b58863;
+    }
+
+    .selected {
+        background-color: #7b61ff;
+    }
+
     .piece-container {
         position: relative;
         width: 100%;
@@ -781,6 +1043,8 @@ const styles = `
         flex-direction: column;
         align-items: center;
         justify-content: center;
+        box-sizing: border-box;
+        overflow: hidden;
     }
 
     .piece {
@@ -789,6 +1053,8 @@ const styles = `
         object-fit: contain;
         position: relative;
         z-index: 1;
+        max-width: 100%;
+        max-height: 100%;
     }
 
     .health-bar {
@@ -808,6 +1074,16 @@ const styles = `
         background: #2ecc71;
         transition: width 0.3s ease, background-color 0.3s ease;
     }
+    
+    .damage-effect {
+        animation: damage-flash 0.3s ease;
+    }
+    
+    @keyframes damage-flash {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.2); background-color: #ff0000; }
+        100% { transform: scale(1); }
+    }
 `;
 
 // Ajouter les styles au document
@@ -816,6 +1092,32 @@ if (!document.querySelector('#game-styles')) {
     styleSheet.id = 'game-styles';
     styleSheet.textContent = styles;
     document.head.appendChild(styleSheet);
+}
+
+// Ajouter les styles pour l'indicateur de poison
+const poisonStyles = `
+    .poison-indicator {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        font-size: 16px;
+        z-index: 10;
+        animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.2); opacity: 0.7; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+`;
+
+// Ajouter les styles de poison au document
+if (!document.querySelector('#poison-styles')) {
+    const poisonStyleSheet = document.createElement('style');
+    poisonStyleSheet.id = 'poison-styles';
+    poisonStyleSheet.textContent = poisonStyles;
+    document.head.appendChild(poisonStyleSheet);
 }
 
 function isValidMove(startRow, startCol, endRow, endCol) {
@@ -840,26 +1142,112 @@ function isValidMove(startRow, startCol, endRow, endCol) {
     if (pieceName.includes('tortue')) {
         console.log("Mouvement de tortue");
         const direction = pieceName.includes('blanche') ? 1 : -1;
+        
         // Mouvement normal vers l'avant
         if (colDiff === 0) {
             return (endRow - startRow) === direction;
         }
+        
+        // Mouvement latéral (droite ou gauche)
+        if (rowDiff === 0 && colDiff === 1) {
+            // Vérifier que la case de destination est vide
+            const targetSquare = document.getElementById(`square-${endRow}-${endCol}`);
+            return targetSquare.querySelector('.piece-container') === null;
+        }
+        
         // Capture en diagonale
         if (colDiff === 1 && (endRow - startRow) === direction) {
             const targetSquare = document.getElementById(`square-${endRow}-${endCol}`);
             return targetSquare.querySelector('.piece-container') !== null;
         }
+        
         return false;
     }
     
     // Tigre
     if (pieceName.includes('tigre')) {
         console.log("Mouvement de tigre");
-        return rowDiff <= 3 && colDiff <= 3;
+        
+        // Vérifier si le tigre se déplace en ligne droite (avant/arrière)
+        const isStraightMove = colDiff === 0;
+        
+        // Vérifier si le tigre se déplace latéralement (gauche/droite)
+        const isLateralMove = rowDiff === 0;
+        
+        // Vérifier si le tigre se déplace en diagonale
+        const isDiagonalMove = rowDiff === colDiff;
+        
+        // Vérifier si le tigre reste sur place (pour attaquer un ennemi adjacent)
+        const isStationary = rowDiff === 0 && colDiff === 0;
+        
+        // Si le tigre reste sur place, vérifier s'il y a un ennemi adjacent
+        if (isStationary) {
+            // Vérifier les cases adjacentes (haut, bas, gauche, droite)
+            const adjacentSquares = [
+                { row: startRow - 1, col: startCol }, // Haut
+                { row: startRow + 1, col: startCol }, // Bas
+                { row: startRow, col: startCol - 1 }, // Gauche
+                { row: startRow, col: startCol + 1 }  // Droite
+            ];
+            
+            // Vérifier si l'une des cases adjacentes contient un ennemi
+            for (const square of adjacentSquares) {
+                // Vérifier que la case est dans les limites du plateau
+                if (square.row >= 0 && square.row < 8 && square.col >= 0 && square.col < 8) {
+                    const targetSquare = document.getElementById(`square-${square.row}-${square.col}`);
+                    const targetPiece = targetSquare.querySelector('.piece-container img');
+                    
+                    if (targetPiece) {
+                        // Vérifier si la pièce est un ennemi
+                        const isWhitePiece = targetPiece.alt.toLowerCase().includes('blanc');
+                        const isBlackPiece = targetPiece.alt.toLowerCase().includes('noir');
+                        
+                        if ((currentPlayer === 'white' && isBlackPiece) || 
+                            (currentPlayer === 'black' && isWhitePiece)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            
+            return false;
+        }
+        
+        // Vérifier si le déplacement est valide (ligne droite, latéral ou diagonal)
+        if (!isStraightMove && !isLateralMove && !isDiagonalMove) {
+            return false;
+        }
+        
+        // Vérifier la distance du déplacement (maximum 3 cases)
+        // Pour une attaque, on permet une distance de 4 cases (3 cases de déplacement + 1 case de la cible)
+        const maxDistance = 3;
+        
+        // Vérifier si la case de destination contient une pièce ennemie
+        const targetSquare = document.getElementById(`square-${endRow}-${endCol}`);
+        const targetPiece = targetSquare.querySelector('.piece-container img');
+        const isAttack = targetPiece !== null && 
+                        ((currentPlayer === 'white' && targetPiece.alt.toLowerCase().includes('noir')) || 
+                         (currentPlayer === 'black' && targetPiece.alt.toLowerCase().includes('blanc')));
+        
+        // Si c'est une attaque, on permet une distance de 4 cases
+        if (isAttack) {
+            // Pour une attaque, on permet une distance de 4 cases (3 cases de déplacement + 1 case de la cible)
+            if (rowDiff > 4 || colDiff > 4) {
+                return false;
+            }
+        } else {
+            // Si ce n'est pas une attaque, on limite à 3 cases
+            if (rowDiff > maxDistance || colDiff > maxDistance) {
+                return false;
+            }
+        }
+        
+        // Vérifier si le chemin est dégagé
+        return isClearPath(startRow, startCol, endRow, endCol);
     }
     
     // Éléphant
-    if (pieceName.includes('elephant')) {
+    if (pieceName.includes('éléphant') || pieceName.includes('Éléphant')) {
         console.log("Mouvement d'éléphant");
         return rowDiff <= 1 && colDiff <= 1;
     }
@@ -867,15 +1255,73 @@ function isValidMove(startRow, startCol, endRow, endCol) {
     // Aigle
     if (pieceName.includes('aigle')) {
         console.log("Mouvement d'aigle");
+        // L'aigle peut se déplacer en ligne droite (horizontale/verticale) ou en diagonale
+        // Mais pour l'attaque, il doit être à une case adjacente par le haut ou par le bas
         return (rowDiff === 0 || colDiff === 0 || rowDiff === colDiff);
     }
     
     // Serpent
     if (pieceName.includes('serpent')) {
         console.log("Mouvement de serpent");
-        return (rowDiff === 2 && colDiff === 1) || (rowDiff === 1 && colDiff === 2);
+        
+        // Le serpent se déplace comme un cavalier (en L)
+        // Il peut se déplacer de 2 cases dans une direction puis 1 case perpendiculairement
+        const isKnightMove = (rowDiff === 2 && colDiff === 1) || (rowDiff === 1 && colDiff === 2);
+        
+        // Vérifier si la case de destination est vide ou contient un ennemi
+        const targetSquare = document.getElementById(`square-${endRow}-${endCol}`);
+        const targetPiece = targetSquare.querySelector('.piece-container img');
+        
+        // Si la case est vide ou contient un ennemi, le mouvement est valide
+        if (isKnightMove) {
+            if (!targetPiece) {
+                // Case vide, mouvement valide
+                return true;
+            } else {
+                // Vérifier si la pièce est un ennemi
+                const isWhitePiece = targetPiece.alt.toLowerCase().includes('blanc');
+                const isBlackPiece = targetPiece.alt.toLowerCase().includes('noir');
+                
+                return (currentPlayer === 'white' && isBlackPiece) || 
+                       (currentPlayer === 'black' && isWhitePiece);
+            }
+        }
+        
+        return false;
     }
 
     console.log("Type de pièce non reconnu");
     return false;
+}
+
+// Fonction pour calculer la position d'arrivée de l'aigle
+function calculateEagleLandingPosition(startRow, startCol, targetRow, targetCol) {
+    // Déterminer si l'aigle doit atterrir au-dessus ou en-dessous de la cible
+    const rowDiff = targetRow - startRow;
+    
+    // Si l'aigle est au-dessus de la cible, il doit atterrir en-dessous
+    // Si l'aigle est en-dessous de la cible, il doit atterrir au-dessus
+    // Si l'aigle est à la même hauteur, il doit atterrir au-dessus
+    let landingRow;
+    if (rowDiff > 0) {
+        // L'aigle est au-dessus de la cible, il doit atterrir en-dessous
+        landingRow = targetRow - 1;
+    } else {
+        // L'aigle est en-dessous de la cible ou à la même hauteur, il doit atterrir au-dessus
+        landingRow = targetRow + 1;
+    }
+    
+    // Vérifier que la position d'atterrissage est valide (dans les limites du plateau)
+    if (landingRow < 0 || landingRow > 7) {
+        // Si la position d'atterrissage est hors limites, essayer l'autre option
+        landingRow = (rowDiff > 0) ? targetRow + 1 : targetRow - 1;
+        
+        // Si toujours hors limites, retourner null
+        if (landingRow < 0 || landingRow > 7) {
+            return null;
+        }
+    }
+    
+    // Retourner la position d'atterrissage
+    return { row: landingRow, col: targetCol };
 }
