@@ -53,9 +53,9 @@ const pieceStats = {
     serpent: {
         hp: 45,
         attack: 15,
-        moveRange: 2,
-        poisonDamage: 5,  // Dégâts de poison par tour
-        poisonDuration: 4  // Durée du poison en tours
+        moveRange: 1,
+        poisonDuration: 3,  // Durée de l'effet de poison
+        poisonDamage: 5  // Dégâts de poison par tour
     }
 };
 
@@ -376,64 +376,6 @@ function isClearPath(startRow, startCol, endRow, endCol) {
     return true;
 }
 
-// Ajouter cette fonction pour gérer la promotion du pion
-function promotePawn(pawn, row, col) {
-    // Créer un menu de sélection
-    const promotionMenu = document.createElement('div');
-    promotionMenu.style.position = 'absolute';
-    promotionMenu.style.display = 'flex';
-    promotionMenu.style.flexDirection = 'row';
-    promotionMenu.style.backgroundColor = 'white';
-    promotionMenu.style.border = '1px solid #ccc';
-    promotionMenu.style.borderRadius = '4px';
-    promotionMenu.style.padding = '2px';
-    promotionMenu.style.zIndex = '1000';
-    
-    // Définir les pièces disponibles pour la promotion
-    const pieces = ['queen', 'rook', 'bishop', 'knight'];
-    const color = currentPlayer === 'white' ? 'white' : 'black';
-    
-    pieces.forEach(piece => {
-        const pieceOption = document.createElement('div');
-        pieceOption.style.width = '30px';
-        pieceOption.style.height = '30px';
-        pieceOption.style.cursor = 'pointer';
-        pieceOption.style.display = 'flex';
-        pieceOption.style.alignItems = 'center';
-        pieceOption.style.justifyContent = 'center';
-        
-        const pieceImg = document.createElement('img');
-        pieceImg.src = `./images/${piece}_${color}.png`;
-        pieceImg.style.width = '25px';
-        pieceImg.style.height = '25px';
-        pieceImg.alt = piece === 'queen' ? `Reine ${color === 'white' ? 'blanche' : 'noire'}` :
-                      piece === 'rook' ? `Tour ${color === 'white' ? 'blanche' : 'noire'}` :
-                      piece === 'bishop' ? `Fou ${color === 'white' ? 'blanc' : 'noir'}` :
-                      `Cavalier ${color === 'white' ? 'blanc' : 'noir'}`;
-        
-        pieceOption.addEventListener('click', () => {
-            pawn.src = pieceImg.src;
-            pawn.alt = pieceImg.alt;
-            document.body.removeChild(promotionMenu);
-            currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
-            console.log(`C'est au tour des ${currentPlayer === 'white' ? 'blancs' : 'noirs'}.`);
-        });
-        
-        pieceOption.appendChild(pieceImg);
-        promotionMenu.appendChild(pieceOption);
-    });
-    
-    // Positionner le menu près du pion
-    const square = document.getElementById(`square-${row}-${col}`);
-    const rect = square.getBoundingClientRect();
-    
-    promotionMenu.style.left = `${rect.right}px`;
-    promotionMenu.style.top = `${rect.top}px`;
-    
-    // Ajouter le menu à la page
-    document.body.appendChild(promotionMenu);
-}
-
 // Fonction pour créer une pièce avec sa barre de vie
 function createPiece(pieceType, pieceImage, pieceName) {
     const container = document.createElement('div');
@@ -445,13 +387,23 @@ function createPiece(pieceType, pieceImage, pieceName) {
     pieceImg.classList.add('piece');
     
     // Déterminer le type de base pour les stats
-    let baseType = pieceType.toLowerCase().replace('b', '');
+    let baseType = pieceType;
+    if (baseType.endsWith('b')) {
+        baseType = baseType.slice(0, -1);
+    }
+    
     switch(baseType) {
+        case 'C': 
         case 'c': baseType = 'chasseur'; break;
+        case 'T': 
         case 't': baseType = 'tortue'; break;
-        case 'T': baseType = 'tigre'; break;
+        case 'T': 
+        case 't': baseType = 'tigre'; break;
+        case 'E': 
         case 'e': baseType = 'elephant'; break;
+        case 'A': 
         case 'a': baseType = 'aigle'; break;
+        case 'S': 
         case 's': baseType = 'serpent'; break;
     }
 
@@ -540,13 +492,10 @@ function combat(attacker, defender) {
 function applyPoison(defender) {
     // Vérifier si la pièce est déjà empoisonnée
     if (defender.dataset.poisoned === 'true') {
-        // Si déjà empoisonnée, réinitialiser le compteur de tours
-        defender.dataset.poisonTurnsLeft = pieceStats.serpent.poisonDuration;
-        console.log(`${defender.alt} est déjà empoisonné, le poison est renouvelé pour ${pieceStats.serpent.poisonDuration} tours.`);
+        console.log(`${defender.alt} est déjà empoisonné.`);
     } else {
-        // Sinon, appliquer le poison
+        // Appliquer le poison permanent
         defender.dataset.poisoned = 'true';
-        defender.dataset.poisonTurnsLeft = pieceStats.serpent.poisonDuration;
         defender.dataset.poisonDamage = pieceStats.serpent.poisonDamage;
         
         // Ajouter un indicateur visuel de poison
@@ -555,7 +504,7 @@ function applyPoison(defender) {
         poisonIndicator.textContent = '☠️';
         defender.parentElement.appendChild(poisonIndicator);
         
-        console.log(`${defender.alt} est empoisonné pour ${pieceStats.serpent.poisonDuration} tours.`);
+        console.log(`${defender.alt} est empoisonné de manière permanente.`);
     }
 }
 
@@ -566,7 +515,6 @@ function applyPoisonDamage() {
     
     poisonedPieces.forEach(piece => {
         // Récupérer les informations de poison
-        const poisonTurnsLeft = parseInt(piece.dataset.poisonTurnsLeft);
         const poisonDamage = parseInt(piece.dataset.poisonDamage);
         
         // Appliquer les dégâts de poison
@@ -576,24 +524,7 @@ function applyPoisonDamage() {
         // Mettre à jour la barre de vie
         updateHealthBar(piece);
         
-        // Réduire le nombre de tours restants
-        piece.dataset.poisonTurnsLeft = poisonTurnsLeft - 1;
-        
-        console.log(`${piece.alt} subit ${poisonDamage} dégâts de poison. Il reste ${piece.dataset.poisonTurnsLeft} tours de poison.`);
-        
-        // Vérifier si le poison est terminé
-        if (parseInt(piece.dataset.poisonTurnsLeft) <= 0) {
-            // Supprimer l'effet de poison
-            piece.dataset.poisoned = 'false';
-            
-            // Supprimer l'indicateur visuel de poison
-            const poisonIndicator = piece.parentElement.querySelector('.poison-indicator');
-            if (poisonIndicator) {
-                poisonIndicator.remove();
-            }
-            
-            console.log(`${piece.alt} n'est plus empoisonné.`);
-        }
+        console.log(`${piece.alt} subit ${poisonDamage} dégâts de poison permanent.`);
         
         // Vérifier si la pièce est vaincue
         if (parseInt(piece.dataset.currentHp) <= 0) {
@@ -758,6 +689,35 @@ function isValidMove(startRow, startCol, endRow, endCol) {
     // Chasseur
     if (pieceName.includes('chasseur')) {
         console.log("Mouvement de chasseur");
+        
+        // Vérifier si c'est une attaque à distance
+        const targetSquare = document.getElementById(`square-${endRow}-${endCol}`);
+        const targetPiece = targetSquare.querySelector('.piece-container img');
+        
+        if (targetPiece) {
+            // Vérifier si la pièce est un ennemi
+            const isWhitePiece = targetPiece.alt.toLowerCase().includes('blanc');
+            const isBlackPiece = targetPiece.alt.toLowerCase().includes('noir');
+            const isEnemy = (currentPlayer === 'white' && isBlackPiece) || 
+                          (currentPlayer === 'black' && isWhitePiece);
+            
+            if (isEnemy) {
+                // Permettre l'attaque si la cible est à exactement 2 cases de distance
+                // en ligne droite (verticale ou horizontale) ou en diagonale
+                if ((rowDiff === 2 && colDiff === 0) ||  // Vertical
+                    (rowDiff === 0 && colDiff === 2) ||  // Horizontal
+                    (rowDiff === 2 && colDiff === 2)) {  // Diagonal
+                    return true;
+                }
+                
+                // Permettre aussi l'attaque au corps à corps
+                if (rowDiff <= 1 && colDiff <= 1) {
+                    return true;
+                }
+            }
+        }
+        
+        // Si ce n'est pas une attaque, permettre le déplacement d'une case
         return rowDiff <= 1 && colDiff <= 1;
     }
     
@@ -887,27 +847,25 @@ function isValidMove(startRow, startCol, endRow, endCol) {
     if (pieceName.includes('serpent')) {
         console.log("Mouvement de serpent");
         
-        // Le serpent se déplace comme un cavalier (en L)
-        // Il peut se déplacer de 2 cases dans une direction puis 1 case perpendiculairement
-        const isKnightMove = (rowDiff === 2 && colDiff === 1) || (rowDiff === 1 && colDiff === 2);
+        // Le serpent ne peut se déplacer que d'une case adjacente
+        const isAdjacentMove = rowDiff <= 1 && colDiff <= 1;
         
         // Vérifier si la case de destination est vide ou contient un ennemi
         const targetSquare = document.getElementById(`square-${endRow}-${endCol}`);
         const targetPiece = targetSquare.querySelector('.piece-container img');
         
-        // Si la case est vide ou contient un ennemi, le mouvement est valide
-        if (isKnightMove) {
+        // Si la case est vide, le mouvement est valide
+        if (isAdjacentMove) {
             if (!targetPiece) {
-                // Case vide, mouvement valide
                 return true;
-            } else {
-                // Vérifier si la pièce est un ennemi
-                const isWhitePiece = targetPiece.alt.toLowerCase().includes('blanc');
-                const isBlackPiece = targetPiece.alt.toLowerCase().includes('noir');
-                
-                return (currentPlayer === 'white' && isBlackPiece) || 
-                       (currentPlayer === 'black' && isWhitePiece);
             }
+            
+            // Si la case contient une pièce, vérifier si c'est un ennemi
+            const isWhitePiece = targetPiece.alt.toLowerCase().includes('blanc');
+            const isBlackPiece = targetPiece.alt.toLowerCase().includes('noir');
+            
+            return (currentPlayer === 'white' && isBlackPiece) || 
+                   (currentPlayer === 'black' && isWhitePiece);
         }
         
         return false;
