@@ -61,19 +61,19 @@ const pieceStats = {
 
 // Configuration des images
 const pieceImages = {
-    C: "./images/archer.png",          // Chasseur (blanc)
-    t: "./images/turtle.jpg",          // Tortue (blanche)
-    T: "./images/tiger Trident_0.png", // Tigre (blanc)
-    E: "./images/elephant.jpg",         // Éléphant (blanc)
-    A: "./images/eagle.jpg",           // Aigle (blanc)
-    S: "./images/snake.jpg",           // Serpent (blanc)
+    C: "./images/archer_white.png",          // Chasseur (blanc)
+    t: "./images/turtle white.jpg",          // Tortue (blanche)
+    T: "./images/Tiger Trident_0 white.png", // Tigre (blanc)
+    E: "./images/elephant_white.jpg",        // Éléphant (blanc)
+    A: "./images/eagle_white.jpg",           // Aigle (blanc)
+    S: "./images/snake_white.jpg",           // Serpent (blanc)
     
-    Cb: "./images/archer.png",         // Chasseur (noir)
-    tb: "./images/turtle.jpg",         // Tortue (noire)
-    Tb: "./images/tiger Trident_0.png",// Tigre (noir)
-    Eb: "./images/elephant.jpg",        // Éléphant (noir)
-    Ab: "./images/eagle.jpg",          // Aigle (noir)
-    Sb: "./images/snake.jpg"           // Serpent (noir)
+    Cb: "./images/archer_black.png",         // Chasseur (noir)
+    tb: "./images/turtle black.jpg",         // Tortue (noire)
+    Tb: "./images/Tiger Trident_0 black.png",// Tigre (noir)
+    Eb: "./images/elephant_black.jpg",       // Éléphant (noir)
+    Ab: "./images/eagle_black.jpg",          // Aigle (noir)
+    Sb: "./images/snake_black.jpg"           // Serpent (noir)
 };
 
 // Configuration des noms
