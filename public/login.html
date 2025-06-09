@@ -150,6 +150,11 @@
     </div>
 
     <script>
+        // Configuration de l'API
+        const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.startsWith('192.168.')) 
+            ? 'http://localhost:3000' 
+            : '';
+
         function switchTab(tab) {
             // Mise à jour des onglets
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -165,11 +170,35 @@
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-password').value;
 
-            // Ici, vous pourrez ajouter la logique de connexion avec votre backend
-            console.log('Tentative de connexion:', { email, password });
-            
-            // Redirection vers la page du jeu après connexion réussie
-            // window.location.href = 'game.html';
+            // Envoi de la requête de connexion
+            fetch(`${API_BASE_URL}/api/auth/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email, password })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Stocker le token dans le localStorage
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('username', data.username);
+                    // Redirection vers la page du jeu
+                    window.location.href = 'game.html';
+                } else {
+                    alert(data.message || 'Erreur de connexion');
+                }
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+                alert('Erreur lors de la connexion: ' + error.message);
+            });
         }
 
         function handleRegister(event) {
@@ -186,11 +215,42 @@
                 return false;
             }
 
-            // Ici, vous pourrez ajouter la logique d'inscription avec votre backend
-            console.log('Tentative d\'inscription:', { username, email, password });
-            
-            // Redirection vers la page du jeu après inscription réussie
-            // window.location.href = 'game.html';
+            console.log('Envoi de la requête d\'inscription...');
+            // Envoi de la requête d'inscription
+            fetch(`${API_BASE_URL}/api/auth/register`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, email, password })
+            })
+            .then(response => {
+                console.log('Réponse reçue:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Données reçues:', data);
+                if (data.success) {
+                    alert('Compte créé avec succès ! Vous pouvez maintenant vous connecter.');
+                    // Redirection vers l'onglet de connexion
+                    switchTab('login');
+                    // Pré-remplir l'email
+                    document.getElementById('login-email').value = email;
+                } else {
+                    alert(data.message || 'Erreur lors de l\'inscription');
+                }
+            })
+            .catch(error => {
+                console.error('Erreur détaillée:', error);
+                if (error.message === 'Failed to fetch') {
+                    alert('Impossible de se connecter au serveur. Veuillez vérifier que le serveur est en cours d\'exécution.');
+                } else {
+                    alert('Erreur lors de l\'inscription: ' + error.message);
+                }
+            });
         }
     </script>
 </body>
