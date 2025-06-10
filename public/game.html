@@ -44,6 +44,47 @@
             min-width: 300px;
         }
 
+        .game-id-display {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .game-id-display h4 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .game-id-display .id {
+            font-family: monospace;
+            font-size: 18px;
+            color: #e74c3c;
+            padding: 8px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 5px 0;
+        }
+
+        .game-id-display .copy-button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        .game-id-display .copy-button:hover {
+            background: #2980b9;
+        }
+
         .player-info {
             margin-bottom: 20px;
             padding: 10px;
@@ -343,11 +384,6 @@
                         <button onclick="joinGame()">Rejoindre</button>
                     </div>
                 </div>
-                <div id="game-link" class="game-link" style="display: none;">
-                    <p>Partagez ce lien avec votre adversaire :</p>
-                    <input type="text" id="game-url" readonly>
-                    <button onclick="copyGameLink()">Copier le lien</button>
-                </div>
             </div>
             <div id="player1" class="player-info">
                 <h3>Joueur 1 (Blancs)</h3>
@@ -358,6 +394,11 @@
                 <h3>Joueur 2 (Noirs)</h3>
                 <p id="player2-name">En attente...</p>
                 <p id="player2-time">Temps: 10:00</p>
+            </div>
+            <div id="game-id-display" class="game-id-display" style="display: none;">
+                <h4>ID de la partie</h4>
+                <div class="id" id="current-game-id"></div>
+                <button class="copy-button" onclick="copyGameId()">Copier l'ID</button>
             </div>
             <div id="game-status">
                 <p>En attente d'un adversaire...</p>
@@ -416,8 +457,11 @@
             console.log('Partie créée avec l\'ID:', newGameId);
             gameId = newGameId;
             const gameUrl = `${window.location.origin}/game.html?gameId=${gameId}`;
-            document.getElementById('game-url').value = gameUrl;
-            document.getElementById('game-link').style.display = 'block';
+            
+            // Afficher l'ID de la partie
+            document.getElementById('current-game-id').textContent = gameId;
+            document.getElementById('game-id-display').style.display = 'block';
+            
             document.getElementById('game-status').textContent = 'En attente d\'un adversaire...';
         });
 
@@ -614,6 +658,16 @@
             gameUrl.select();
             document.execCommand('copy');
             showError('Lien copié !');
+        }
+
+        // Fonction pour copier l'ID
+        function copyGameId() {
+            const gameId = document.getElementById('current-game-id').textContent;
+            navigator.clipboard.writeText(gameId).then(() => {
+                showError('ID copié !');
+            }).catch(err => {
+                showError('Erreur lors de la copie de l\'ID');
+            });
         }
 
         // Fonction pour afficher une erreur
