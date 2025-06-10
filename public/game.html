@@ -216,47 +216,106 @@
 
         .waiting-room {
             margin-bottom: 20px;
-            padding: 15px;
+            padding: 20px;
             background: #f8f9fa;
-            border-radius: 5px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .waiting-room h3 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+            text-align: center;
         }
 
         .game-actions {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 15px;
         }
 
-        .join-game {
-            display: flex;
-            gap: 10px;
-        }
-
-        .game-link {
-            margin-top: 15px;
-            padding: 10px;
-            background: #e9ecef;
-            border-radius: 5px;
-        }
-
-        .game-link input {
-            width: 100%;
-            padding: 5px;
-            margin: 5px 0;
-        }
-
-        .game-link button {
-            width: 100%;
-            padding: 8px;
+        .game-actions button {
+            padding: 12px 20px;
             background: #2c3e50;
             color: white;
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        .game-actions button:hover {
+            background: #34495e;
+        }
+
+        .join-game {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .join-game input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .join-game button {
+            padding: 12px 20px;
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        .join-game button:hover {
+            background: #219a52;
+        }
+
+        .game-link {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e9ecef;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .game-link p {
+            margin-bottom: 10px;
+            color: #2c3e50;
+            font-weight: bold;
+        }
+
+        .game-link input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin: 5px 0;
+            font-size: 16px;
+            background: white;
+        }
+
+        .game-link button {
+            width: 100%;
+            padding: 12px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
         }
 
         .game-link button:hover {
-            background: #34495e;
+            background: #2980b9;
         }
     </style>
 </head>
@@ -278,10 +337,10 @@
             <div id="waiting-room" class="waiting-room">
                 <h3>Créer ou rejoindre une partie</h3>
                 <div class="game-actions">
-                    <button onclick="createNewGame()">Créer une nouvelle partie</button>
+                    <button onclick="createNewGame()" style="background: #e74c3c;">Créer une nouvelle partie</button>
                     <div class="join-game">
-                        <input type="text" id="game-id-input" placeholder="ID de la partie">
-                        <button onclick="joinGame()">Rejoindre la partie</button>
+                        <input type="text" id="game-id-input" placeholder="Entrez l'ID de la partie">
+                        <button onclick="joinGame()">Rejoindre</button>
                     </div>
                 </div>
                 <div id="game-link" class="game-link" style="display: none;">
@@ -328,34 +387,47 @@
         let selectedPiece = null;
         let isMyTurn = false;
 
-        // Gestionnaire d'événements pour la connexion
+        // Récupérer le token JWT du localStorage
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login.html';
+        }
+
+        // Authentification avec le serveur
         socket.on('connect', () => {
             console.log('Connecté au serveur');
+            socket.emit('authenticate', token);
+        });
+
+        // Gestionnaire d'événements pour l'authentification
+        socket.on('authenticated', () => {
+            console.log('Authentification réussie');
             // Créer une nouvelle partie ou rejoindre une partie existante
             const urlParams = new URLSearchParams(window.location.search);
             const joinGameId = urlParams.get('gameId');
             
             if (joinGameId) {
                 socket.emit('joinGame', { gameId: joinGameId, username });
-            } else {
-                socket.emit('createGame', username);
             }
         });
 
         // Gestionnaire pour la création d'une partie
         socket.on('gameCreated', ({ gameId: newGameId }) => {
+            console.log('Partie créée avec l\'ID:', newGameId);
             gameId = newGameId;
-            const gameUrl = `${window.location.origin}?gameId=${gameId}`;
+            const gameUrl = `${window.location.origin}/game.html?gameId=${gameId}`;
             document.getElementById('game-url').value = gameUrl;
             document.getElementById('game-link').style.display = 'block';
             document.getElementById('game-status').textContent = 'En attente d\'un adversaire...';
         });
 
         // Gestionnaire pour le début d'une partie
-        socket.on('gameStarted', ({ gameState }) => {
+        socket.on('gameStart', ({ color, opponent }) => {
+            console.log('La partie commence ! Couleur:', color, 'Adversaire:', opponent);
             document.getElementById('waiting-room').style.display = 'none';
-            updateGameState(gameState);
-            document.getElementById('game-status').textContent = 'La partie a commencé !';
+            document.getElementById('game-status').textContent = `La partie a commencé ! Vous jouez les ${color === 'white' ? 'blancs' : 'noirs'}`;
+            document.getElementById('player2-name').textContent = opponent;
+            isMyTurn = color === 'white';
         });
 
         // Gestionnaire pour les mises à jour du jeu
@@ -372,11 +444,8 @@
 
         // Gestionnaire pour les erreurs
         socket.on('error', (message) => {
-            const errorElement = document.getElementById('error-message');
-            errorElement.textContent = message;
-            setTimeout(() => {
-                errorElement.textContent = '';
-            }, 3000);
+            console.error('Erreur:', message);
+            showError(message);
         });
 
         // Fonction pour mettre à jour l'état du jeu
@@ -524,6 +593,7 @@
 
         // Fonction pour créer une nouvelle partie
         function createNewGame() {
+            console.log('Création d\'une nouvelle partie...');
             socket.emit('createGame', username);
         }
 
@@ -531,6 +601,7 @@
         function joinGame() {
             const gameId = document.getElementById('game-id-input').value.trim();
             if (gameId) {
+                console.log('Tentative de rejoindre la partie:', gameId);
                 socket.emit('joinGame', { gameId, username });
             } else {
                 showError('Veuillez entrer un ID de partie valide');

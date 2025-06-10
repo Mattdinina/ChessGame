@@ -194,6 +194,12 @@ io.on('connection', (socket) => {
                 user.isOnline = true;
                 user.lastSeen = new Date();
                 await user.save();
+
+                // Confirmer l'authentification
+                socket.emit('authenticated');
+                console.log('Joueur authentifié:', playerInfo.username);
+            } else {
+                socket.emit('error', 'Utilisateur non trouvé');
             }
         } catch (error) {
             console.error('Erreur d\'authentification:', error);
@@ -223,6 +229,7 @@ io.on('connection', (socket) => {
 
             // Informer le créateur de la partie
             socket.emit('gameCreated', { gameId });
+            console.log('Nouvelle partie créée:', gameId, 'par', playerInfo.username);
         } catch (error) {
             console.error('Erreur lors de la création de la partie:', error);
             socket.emit('error', 'Erreur lors de la création de la partie');
@@ -265,6 +272,7 @@ io.on('connection', (socket) => {
                 color: 'black',
                 opponent: player1.username
             });
+            console.log('Partie rejointe:', gameId, 'par', playerInfo.username);
         } catch (error) {
             console.error('Erreur lors de la connexion à la partie:', error);
             socket.emit('error', 'Erreur lors de la connexion à la partie');
