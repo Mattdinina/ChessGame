@@ -62,14 +62,14 @@ const pieceStats = {
 // Configuration des images
 const pieceImages = {
     C: "./images/archer_white.png",          // Chasseur (blanc)
-    t: "./images/turtle white.jpg",          // Tortue (blanche)
+    t: "./images/turtle_white.jpg",          // Tortue (blanche)
     T: "./images/Tiger Trident_0 white.png", // Tigre (blanc)
     E: "./images/elephant_white.jpg",        // Éléphant (blanc)
     A: "./images/eagle_white.jpg",           // Aigle (blanc)
     S: "./images/snake_white.jpg",           // Serpent (blanc)
     
     Cb: "./images/archer_black.png",         // Chasseur (noir)
-    tb: "./images/turtle black.jpg",         // Tortue (noire)
+    tb: "./images/turtle_black.jpg",         // Tortue (noire)
     Tb: "./images/Tiger Trident_0 black.png",// Tigre (noir)
     Eb: "./images/elephant_black.jpg",       // Éléphant (noir)
     Ab: "./images/eagle_black.jpg",          // Aigle (noir)

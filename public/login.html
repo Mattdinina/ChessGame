@@ -170,34 +170,29 @@
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-password').value;
 
-            // Envoi de la requête de connexion
-            fetch(`${API_BASE_URL}/api/auth/login`, {
+            fetch('/api/auth/login', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
                 },
                 body: JSON.stringify({ email, password })
             })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Stocker le token dans le localStorage
+                    // Stocker le token et le nom d'utilisateur
                     localStorage.setItem('token', data.token);
                     localStorage.setItem('username', data.username);
-                    // Redirection vers la page du jeu
-                    window.location.href = 'game.html';
+                    // Rediriger vers game.html
+                    window.location.href = '/game.html';
                 } else {
-                    alert(data.message || 'Erreur de connexion');
+                    alert(data.message);
                 }
             })
             .catch(error => {
                 console.error('Erreur:', error);
-                alert('Erreur lors de la connexion: ' + error.message);
+                alert('Erreur lors de la connexion');
             });
         }
 

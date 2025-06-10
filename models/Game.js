@@ -1,96 +1,103 @@
 import mongoose from 'mongoose';
 
 const gameSchema = new mongoose.Schema({
-    whitePlayer: {
+    gameId: {
+        type: String,
+        required: true,
+        unique: true
+    },
+    player1: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
     },
-    blackPlayer: {
+    player2: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
+        ref: 'User'
+    },
+    player1SocketId: {
+        type: String,
         required: true
+    },
+    player2SocketId: {
+        type: String
     },
     status: {
         type: String,
-        enum: ['pending', 'active', 'completed', 'abandoned'],
-        default: 'pending'
+        enum: ['waiting', 'active', 'finished'],
+        default: 'waiting'
     },
+    moves: [{
+        from: {
+            row: Number,
+            col: Number
+        },
+        to: {
+            row: Number,
+            col: Number
+        },
+        piece: String,
+        timestamp: {
+            type: Date,
+            default: Date.now
+        }
+    }],
     winner: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    },
+    result: {
         type: String,
         enum: ['white', 'black', 'draw', null],
         default: null
     },
-    moves: [{
-        from: String,
-        to: String,
-        piece: String,
-        timestamp: Date
-    }],
-    currentPosition: {
-        type: String,
-        default: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1' // FEN initial
+    startTime: {
+        type: Date,
+        default: Date.now
     },
-    timeControl: {
-        type: Number, // en minutes
-        default: 10
-    },
-    whiteTimeRemaining: {
-        type: Number, // en secondes
-        default: 600
-    },
-    blackTimeRemaining: {
-        type: Number, // en secondes
-        default: 600
-    },
-    startTime: Date,
     endTime: Date
 }, {
     timestamps: true
 });
 
-// Méthode pour ajouter un coup
-gameSchema.methods.addMove = async function(move) {
-    this.moves.push({
-        ...move,
-        timestamp: new Date()
-    });
-    await this.save();
+// Méthode pour mettre à jour les classements des joueurs
+gameSchema.methods.updateRatings = async function() {
+    if (this.status !== 'finished' || !this.result) return;
+
+    const player1 = await this.model('User').findById(this.player1);
+    const player2 = await this.model('User').findById(this.player2);
+
+    if (!player1 || !player2) return;
+
+    let player1Result, player2Result;
+
+    switch (this.result) {
+        case 'white':
+            player1Result = 1;
+            player2Result = 0;
+            break;
+        case 'black':
+            player1Result = 0;
+            player2Result = 1;
+            break;
+        case 'draw':
+            player1Result = 0.5;
+            player2Result = 0.5;
+            break;
+    }
+
+    await player1.updateRating(player2.rating, player1Result);
+    await player2.updateRating(player1.rating, player2Result);
 };
 
-// Méthode pour mettre à jour le temps restant
-gameSchema.methods.updateTimeRemaining = async function(color, timeRemaining) {
-    if (color === 'white') {
-        this.whiteTimeRemaining = timeRemaining;
-    } else {
-        this.blackTimeRemaining = timeRemaining;
+// Middleware pour mettre à jour les classements avant de sauvegarder
+gameSchema.pre('save', async function(next) {
+    if (this.isModified('status') && this.status === 'finished' && !this.endTime) {
+        this.endTime = new Date();
+        await this.updateRatings();
     }
-    await this.save();
-};
-
-// Méthode pour terminer la partie
-gameSchema.methods.endGame = async function(winner) {
-    this.status = 'completed';
-    this.winner = winner;
-    this.endTime = new Date();
-    
-    // Mettre à jour les classements des joueurs
-    const whitePlayer = await this.model('User').findById(this.whitePlayer);
-    const blackPlayer = await this.model('User').findById(this.blackPlayer);
-    
-    if (winner === 'white') {
-        await whitePlayer.updateRating(blackPlayer.rating, 1);
-        await blackPlayer.updateRating(whitePlayer.rating, 0);
-    } else if (winner === 'black') {
-        await whitePlayer.updateRating(blackPlayer.rating, 0);
-        await blackPlayer.updateRating(whitePlayer.rating, 1);
-    } else {
-        await whitePlayer.updateRating(blackPlayer.rating, 0.5);
-        await blackPlayer.updateRating(whitePlayer.rating, 0.5);
-    }
-    
-    await this.save();
-};
+    next();
+});
 
 const Game = mongoose.model('Game', gameSchema);
 
